@@ -1,157 +1,119 @@
 import numpy as np
-from typing import Tuple, Dict, Any
 import torch
 import torch.nn.functional as F
-import scipy.signal
-import numpy as np
+from typing import Tuple, Dict, Any
 
 
-def create_4d_spectrogram_torch(hyperspectral_data, bandwidth=2, window=5, mfft=32, norm='abs', device='cpu'):
+def create_4d_spectrogram_torch_channel_first(hyper_data: np.ndarray,
+                                              bandwidth: int = 2,
+                                              window: int = 5,
+                                              mfft: int = 32,
+                                              norm: str = 'abs',
+                                              device: str = 'cpu') -> torch.Tensor:
     """
-    Creates a 4D spectrogram of a hyperspectral image in the channel domain, fully vectorized, using PyTorch.
-    
+    Create 4D spectrogram from channel-first hyperspectral data.
+
     Args:
-        hyperspectral_data: A 3D numpy array representing the hyperspectral image (rows, cols, bands).
-        window_size: Size of the STFT window.
-        hop_length: Hop length for the STFT.
-        
+        hyper_data (np.ndarray): Input image of shape (C, H, W)
+        bandwidth (int): Bandwidth for STFT
+        window (int): Window length for STFT
+        mfft (int): Number of FFT bins
+        norm (str): Normalization method: 'abs', 'minmax', or 'none'
+        device (str): 'cpu' or 'cuda'
+
     Returns:
-        A 4D tensor representing the spectrogram (rows, cols, bands, frequencies).
+        torch.Tensor: 4D spectrogram of shape (F, T, H, W)
     """
-    # Convert input hyperspectral data to PyTorch tensor and move to the appropriate device
-    hyperspectral_data = torch.tensor(hyperspectral_data, dtype=torch.float32, device=device)
-    
-    rows, cols, bands = hyperspectral_data.shape
-    spectral_profiles = hyperspectral_data.view(-1, bands)  # Reshape to (rows*cols, bands)
-    
-    # Vectorized computation of the STFT for all spectral profiles (treat each pixel as a transient)
-    spgram_all, freq_spect, t_spect = get_normalized_spectrogram_torch(
-        spectral_profiles, bandwidth, np.array([window]), mfft, 1, norm, device
-    )
-    
-    # Reshape the result to match the 4D output format (rows, cols, mfft, mfft)
-    spectrogram_4d = spgram_all.view(rows, cols, mfft, mfft)
-    
-    return spectrogram_4d
+    hyper_tensor = torch.tensor(hyper_data, dtype=torch.float32, device=device)  # [C, H, W]
+    C, H, W = hyper_tensor.shape
+    pixels = hyper_tensor.permute(1, 2, 0).reshape(-1, C)  # (H*W, C)
+
+    spgram_all, _, _ = get_normalized_spectrogram_torch(
+        pixels, bandwidth, np.array([window]), mfft, 1, norm, device
+    )  # (H*W, F, T)
+
+    spgram_all = spgram_all.view(H, W, mfft, -1).permute(2, 3, 0, 1)  # → (F, T, H, W)
+    if device == 'cuda': 
+        spgram_all = spgram_all.cpu().numpy()
+    else: 
+        spgram_all = spgram_all.cpu()
+    return spgram_all
+
 
 def get_normalized_spectrogram_torch(
     fids, bandwidth, window, mfft, hop, norm, device
 ):
-    """
-    Get normalized spectrogram of fids, fully vectorized, using PyTorch.
-    
-    fids: Spectral data (each pixel as a "transient") of shape (qntty, bands).
-    """
-    qntty = fids.shape[0]  # This is now the number of pixels in the hyperspectral image (rows * cols)
-    
-    # Compute the STFT for all spectral profiles in one step (fully vectorized)
+    qntty = fids.shape[0]
     spgram_all = []
+
     for i in range(qntty):
         spgram = get_stft(fids[i], bandwidth, window, mfft, hop, device)
         spgram_all.append(spgram)
-    
-    spgram_all = torch.stack(spgram_all, dim=0)
-    
-    # Normalize using the specified method (fully vectorized)
+
+    spgram_all = torch.stack(spgram_all, dim=0)  # (N, F, T)
+
     if norm == "minmax":
         spgram_all = normalize_complex_vector_min_max(spgram_all)
-    else:
+    elif norm == "abs":
         spgram_all = normalize_complex_vector_abs(spgram_all)
+    # else: keep complex
 
-    # Calculate frequency and time arrays (vectorized)
     freq_spect = torch.flip(torch.linspace(0, bandwidth // 2, mfft, device=device), dims=[0])
     t_spect = torch.linspace(0, 1, spgram_all.shape[2], device=device)
 
     return spgram_all, freq_spect, t_spect
 
-def get_stft(signal, bandwidth, window, mfft, hop, device):
-    """
-    Get the Short-Time Fourier Transform (STFT) of a single signal (spectral profile).
-    """
-    # This function assumes `scipy.signal.stft` can be replaced with a PyTorch implementation
-    # We'll use a simple implementation here for demonstration, but this should be optimized.
-    n_samples = signal.shape[0]
-    
-    # Create window (this is just a simple Hamming window)
-    win = torch.hamming_window(window[0], device=device)
-    
-    
-    # Apply the STFT calculation (using torch.fft for FFT)
-    stft_result = torch.stft(signal, n_fft=mfft, hop_length=hop, win_length=window[0], 
-                             window=win, return_complex=True)
-   
 
-    stft_result = pad_spectrogram(stft_result, padding_mode='reflect')
-    
-    
-    return stft_result
+def get_stft(signal, bandwidth, window, mfft, hop, device):
+    win = torch.hamming_window(window[0], device=device)
+    stft_result = torch.stft(signal, n_fft=mfft, hop_length=hop,
+                             win_length=window[0], window=win,
+                             return_complex=True)
+    return pad_spectrogram(stft_result, padding_mode='reflect')
+
 
 def normalize_complex_vector_abs(spgram_all):
-    """
-    Normalize the spectrogram using the absolute value (magnitude) normalization.
-    """
-    return torch.abs(spgram_all) / torch.max(torch.abs(spgram_all), dim=-1, keepdim=True)[0]
+    return torch.abs(spgram_all) / (torch.amax(torch.abs(spgram_all), dim=-1, keepdim=True) + 1e-8)
+
 
 def normalize_complex_vector_min_max(spgram_all):
-    """
-    Normalize the spectrogram using min-max normalization.
-    """
-    min_vals = torch.min(spgram_all, dim=-1, keepdim=True)[0]
-    max_vals = torch.max(spgram_all, dim=-1, keepdim=True)[0]
-    return (spgram_all - min_vals) / (max_vals - min_vals)
+    mag = torch.abs(spgram_all)
+    min_vals = torch.amin(mag, dim=-1, keepdim=True)
+    max_vals = torch.amax(mag, dim=-1, keepdim=True)
+    return (mag - min_vals) / (max_vals - min_vals + 1e-8)
+
 
 def pad_spectrogram(spectrogram, padding_mode='reflect'):
-    """
-    Pad the spectrogram to the target shape using torchvision.transforms with reflect or mirror padding.
-    
-    Args:
-        spectrogram: Tensor representing the spectrogram (shape: [channels, height, width])
-        target_shape: The desired target shape (height, width) for the spectrogram.
-        padding_mode: Padding mode for reflection, can be 'reflect' or 'mirror'.
-        
-    Returns:
-        Padded spectrogram with the desired target shape.
-    """
-    padding_size = 32 - spectrogram.shape[0] 
-    #print(padding_size)
-    
-    # Apply the padding using torch.nn.functional.pad
-    padding = (padding_size, 0) #left, right, top, bottom, padding.
-    # If you need padding on other dimensions, adjust `padding` accordingly.
-    padded_spectrogram = F.pad(spectrogram.T, padding, mode=padding_mode) 
-    #print(padded_spectrogram.shape)
-    return padded_spectrogram.T
-
-
+    padding_size = 32 - spectrogram.shape[0]
+    padding = (padding_size, 0)
+    return F.pad(spectrogram.T, padding, mode=padding_mode).T
 
 
 class Spectrogram4D():
-    '''
-    Real time random cropping
-    '''
-    def __init__(self, 
+    """
+    Applies 4D spectrogram transform to channel-first hyperspectral images: (C, H, W) → (F, T, H, W)
+    """
+    def __init__(self,
                  bandwidth: int,
-                 window:int, 
-                 mfft: int, 
-                 norm:str, 
-                 device:str
-                 ):
-        
+                 window: int,
+                 mfft: int,
+                 norm: str = 'abs',
+                 device: str = 'cpu'):
         self.bandwidth = bandwidth
         self.window = window
         self.mfft = mfft
         self.norm = norm
-        self.device= device
+        self.device = device
 
-    def __call__(self, 
-                 img: np.ndarray, 
+    def __call__(self,
+                 img: np.ndarray,
                  cube: np.ndarray,
-                 m: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-        
-        img = create_4d_spectrogram_torch(img, self.bandwidth, self.window, self.mfft, self.norm, self.device)
-        
-        return img, cube, m
+                 meta: Dict[str, Any]) -> Tuple[torch.Tensor, np.ndarray, Dict[str, Any]]:
 
-    def __str__(self) -> str:
-        return f"RandomCrop with width: {self.width} and height {self.height}"
-    
+        img_transformed = create_4d_spectrogram_torch_channel_first(
+            img, self.bandwidth, self.window, self.mfft, self.norm, self.device
+        )
+        return img_transformed, cube, meta
+
+    def __str__(self):
+        return f"Spectrogram4D_ChannelFirst(F={self.mfft}, T=?, norm={self.norm})"

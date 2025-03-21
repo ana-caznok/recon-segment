@@ -46,6 +46,13 @@ def transform_factory(index: str):
     elif index =='fft_D40_cube_gpu':
         base_path = '/media/ana-caznok/SSD-08/recon-segment/'
         return Compose([RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',True, True, 'cuda')])
+    
+    elif index=='stft_D40_x_gpu': 
+        base_path = '/media/ana-caznok/SSD-08/recon-segment/'
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'),Spectrogram4D(2, 5,32,'abs',device='cuda')])
+    elif index=='stft_D40_x_cpu': 
+        base_path = '/media/ana-caznok/SSD-08/recon-segment/'
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'),Spectrogram4D(2, 5,32,'abs',device='cpu')])
 
     
     elif index == 'hist_match_h5_04_and_patch_512': 
