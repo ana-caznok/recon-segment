@@ -24,7 +24,7 @@ def create_4d_spectrogram_torch_channel_first(hyper_data: np.ndarray,
     Returns:
         torch.Tensor: 4D spectrogram of shape (F, T, H, W)
     """
-    hyper_tensor = torch.tensor(hyper_data, dtype=torch.float32, device=device)  # [C, H, W]
+    hyper_tensor = torch.tensor(hyper_data, dtype=torch.float16, device=device)  # [C, H, W]
     C, H, W = hyper_tensor.shape
     pixels = hyper_tensor.permute(1, 2, 0).reshape(-1, C)  # (H*W, C)
 

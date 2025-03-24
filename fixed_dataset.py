@@ -42,7 +42,13 @@ class FixedDataset(Dataset):
         if self.preprocessing == "None":
             print("WARNING: interpreting None string as None type")
             self.preprocessing = None
-        
+        # base_path_ana = os.getenv("ICASP_DOWNSAMPLED")
+#base_path_ana= '/mnt/datassd/icasp/data/preprocessed/downsampled'
+#preprocessing = "downsampled"
+
+#base_path_ana= '/mnt/datassd/icasp/data/raw/Link_2/'
+#preprocessing = None
+
         if self.preprocessing is None:
             fmt = "*.mat"
         elif self.preprocessing == "downsampled":
@@ -149,7 +155,7 @@ class FixedDataset(Dataset):
         val_files = []
         train_files = []
         for file in files:
-            val = False/mnt/datassd/icasp/RainbowAI/
+            val = False
             for val_idx in val_list:
                 if val_idx in file:
                     val_files.append(file)
