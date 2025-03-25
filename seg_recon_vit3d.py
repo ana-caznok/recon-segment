@@ -43,7 +43,7 @@ class Embedd(nn.Module):
         # Flatten to (B, T, E) where T = H' * W'
         patches = patches.flatten(2).transpose(1, 2)
 
-        # Lazily initialize positional embedding if needed
+        # Lazily initialize positional embedding if needed : probably remove the if and leve the statement 
         if self.position_embedding is None or self.position_embedding.num_embeddings != num_patches:
             self.position_embedding = nn.Embedding(num_patches, self.embed_dim).to(tensor.device)
 
@@ -53,7 +53,23 @@ class Embedd(nn.Module):
         # Add positional encoding to the patch embeddings
         embeddings = patches + self.position_embedding(position_ids)
         return embeddings, H, W
+    
 
+class Encoder(nn.Module): 
+    def __init__(self, config, in_channel=31, patch_size=32, embed_dim=768):
+        super().__init__()
+        self.embedding_function = Embedd(in_channel, patch_size, embed_dim) 
+        self.attention = ViT_Attention(config)
+
+    def forward(self, tensor: torch.Tensor):
+
+        # Embed patches with position encoding
+        embeddings, h, w = self.embedding_function(tensor)  # (B, T, E), h*w = T
+        # Apply self-attention on the patches
+        x = self.attention(embeddings)  # (B, T, E)
+        return x, h, w
+
+        
 
 # Decoder that upsamples the encoded patch features back to a full-resolution image
 class RecDecoder(nn.Module):
@@ -73,7 +89,7 @@ class RecDecoder(nn.Module):
                 stride=2,
                 padding=1
             ))
-            #layers.append(nn.Upsample(scale_factor=2, mode="bilinear"))
+            
             layers.append(nn.BatchNorm2d(channels[i+1]))  # Batch normalization
             layers.append(nn.ReLU(inplace=True))          # Activation
         
@@ -85,6 +101,14 @@ class RecDecoder(nn.Module):
             padding=1
         ))
         layers.append(nn.Upsample(scale_factor=2, mode="bilinear"))
+        # New layer that does not change output shape
+        layers.append(nn.Conv2d(
+            in_channels=tot_channels,
+            out_channels=tot_channels,
+            kernel_size=3,
+            padding=1
+        ))
+        layers.append(nn.ReLU(inplace=True))
 
         # Store the full decoder as a Sequential module
         self.decoder = nn.Sequential(*layers)
@@ -111,9 +135,6 @@ class SegRecon_ViT_3D(nn.Module):
         self.num_heads = num_heads
         self.patch_size = patch_size
 
-        # Patch embedding module
-        self.embedding_function = Embedd(C_input, patch_size, emb_size)
-
         # Attention configuration for the transformer block
         config = VitAttentionConfig(
             attention_dropout=0.0,
@@ -121,7 +142,8 @@ class SegRecon_ViT_3D(nn.Module):
             hidden_size=emb_size)
 
         # Vision Transformer attention block
-        self.attention = ViT_Attention(config)
+        # Encoder = embedding + attention, embedding inputs B,C,Y,X and outputs (B, T, E), H, W, with h*w = T, attention inputs (B, T, E) and outputs B, T, E
+        self.encoder = Encoder(config,C_input, patch_size, emb_size)
 
         # Decoder to reconstruct full image from patch embeddings
         self.decoder = RecDecoder(embed_dim=emb_size, tot_channels=total_channels)
@@ -144,15 +166,12 @@ class SegRecon_ViT_3D(nn.Module):
         # Ensure image dimensions are divisible by patch size
         if Y % self.patch_size != 0 or X % self.patch_size != 0:
             raise ValueError(f"Input dimensions ({Y}, {X}) must be divisible by patch size {self.patch_size}.")
-
-        # Embed patches with position encoding
-        embeddings, h, w = self.embedding_function(x_input)  # (B, T, E), with h*w = T
-
-        # Apply self-attention on the patches
-        x = self.attention(embeddings)  # (B, T, E)
+        
+        # Encoder: embedd image patches and apply self attention     
+        x,h,w = self.encoder(x_input) # outputs (B, T, E), H, W, with h*w = T, H is the number of vertical and W of horizontal patches 
 
         # Decode to full-resolution image
-        x = self.decoder(x, h, w)  # (B, total_channels, Y, X)
+        x = self.decoder(x, h, w)  # outputs (B, total_channels, Y, X)
 
         # Final channel projection
         x = self.out_conv(x)
@@ -168,3 +187,4 @@ if __name__ == "__main__":
 
     model = SegRecon_ViT_3D()
     torchinfo.summary(model, input_size=(1, 31, 512, 512), device="cpu")
+#layers.append(nn.Upsample(scale_factor=2, mode="bilinear"))

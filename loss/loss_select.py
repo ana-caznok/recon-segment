@@ -6,6 +6,7 @@ from torchmetrics.image import SpectralAngleMapper
 from loss.mraessimsamloss import MRAESSIMSAMLoss
 from loss.msesam import MSESAMLoss
 from loss.channel_loss import ChannelLoss
+from loss.useful_losses import *
 
 
 def loss_select(configs: Dict[str, Any]) -> object:
@@ -45,6 +46,8 @@ def loss_select(configs: Dict[str, Any]) -> object:
     elif index == "ChannelLossSamDynamic":
         channel_weights = configs.get("channel_w", None)
         return ChannelLoss(channel_weights, enable_sam=True, dynamic_weight=True)
+    elif index =='MRAE': 
+        return Loss_MRAE()
     else:
         raise ValueError(f"Could not find loss index {index}")
     

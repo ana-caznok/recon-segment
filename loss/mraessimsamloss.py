@@ -1,7 +1,6 @@
 import torch
 from torch import nn
-
-from baseline.train_code.utils import Loss_MRAE
+from loss.useful_losses import Loss_MRAE, Loss_PSNR, Loss_RMSE
 from torchmetrics.image import SpectralAngleMapper, StructuralSimilarityIndexMeasure
 
 

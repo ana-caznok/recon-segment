@@ -126,7 +126,7 @@ class ViT_Attention(nn.Module):
         # Final linear projection after attention outputs are combined
         self.out_proj = nn.Linear(self.embed_dim, self.embed_dim)
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states, h = None , w = None ):
         """
         Args:
             hidden_states: Input tensor of shape (B, T, E), where

@@ -1,0 +1,33 @@
+save_checkpoint_path: '"./seg_rec_model.pth"'  # modificado
+
+pretrained_path: null
+continue_model_path: null
+resume_wandb_id: 'vo2sayaq'
+
+evaluate_step: 499  # will never happen if higher than dataset size
+save_steps: 499
+
+wandb: True
+
+train:
+  batch_size: 4  
+  lr: 0.0001  # 1e-4 faster initial lr 
+  epochs: 30 
+  transform_index: "downs4_fft_D40_cube_gpu" # nnunet transform simply doesnt work 
+
+valid:
+  batch_size: 2
+  transform_index: "downs4_fft_D40_cube_gpu"
+
+nworkers: 2
+
+task: 'recon'
+loss: "MSE"  
+model: 'seg-rec_61' 
+base_path: "/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
+preprocessing: h5py
+opt: "AdamW"  # adamW with 1e-5 weight decay
+scheduling: 0.998  # exponential learning rate decay
+
+# Minimize sam instead of loss
+torchinfo: True
