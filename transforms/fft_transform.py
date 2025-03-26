@@ -37,6 +37,64 @@ def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str =
 
     return fft_result
 
+def fft_real_imag_normalized(img: np.ndarray, norm: str = 'realimag', device: str = 'cpu', channel_first: bool = True) -> np.ndarray:
+    """
+    Apply FFT along the spectral dimension and return a normalized, interleaved real+imag output.
+    Output shape will have 2x channels. Even = real, Odd = imag. Values in [0.0001, 1].
+
+    Args:
+        img (np.ndarray): Input hyperspectral image, either (C, H, W) if channel_first=True, or (H, W, C)
+        device (str): 'cpu' or 'cuda' - controls where the FFT is computed
+        channel_first (bool): If True, assumes channels are the first dimension
+
+    Returns:
+        np.ndarray: Output array with shape (2C, H, W) or (H, W, 2C),
+                    where even-indexed channels are real part, odd-indexed are imaginary part.
+    """
+    # Determine which axis corresponds to the spectral (channel) dimension
+    dim = 0 if channel_first else -1
+
+    # Convert the input image to a PyTorch tensor on the specified device
+    img_tensor = torch.tensor(img, dtype=torch.float32, device=device)
+
+    # Perform 1D FFT along the spectral/channel axis
+    fft_result = torch.fft.fft(img_tensor, dim=dim)
+
+    # Extract the real and imaginary parts of the complex FFT result
+    real = fft_result.real
+    imag = fft_result.imag
+
+    # Define a function to normalize values to the range [0.0001, 1]
+    def normalize(t):
+        # Compute per-spectrum minimum and maximum along the spectral axis
+        t_min = t.amin(dim=dim, keepdim=True)
+        t_max = t.amax(dim=dim, keepdim=True)
+        # Normalize to [0, 1], avoiding divide-by-zero with small epsilon
+        normed = (t - t_min) / (t_max - t_min + 1e-8)
+        # Rescale to [0.0001, 1]
+        return normed * (1 - 0.0001) + 0.0001
+
+    # Normalize real and imaginary parts separately
+    real = normalize(real)
+    imag = normalize(imag)
+
+    # Stack real and imaginary tensors along a new intermediate dimension
+    # This results in a shape like [2, C, H, W] or [H, W, 2, C], depending on layout
+    stacked = torch.stack([real, imag], dim=dim + 1 if not channel_first else dim + 1)
+
+    # Flatten the new 2-element stack into the spectral axis to interleave:
+    # Even indices become real, odd indices become imaginary
+    # Final shape: (2C, H, W) or (H, W, 2C)
+    interleaved = stacked.flatten(start_dim=dim, end_dim=dim + 1)
+
+    if device == 'cuda': 
+        interleaved = interleaved.cpu().numpy()
+    else: 
+        interleaved = interleaved.numpy()
+
+    # Return the result as a NumPy array on CPU
+    return interleaved
+
 
 class FourierSpectralTransform:
     """
@@ -52,6 +110,12 @@ class FourierSpectralTransform:
         self.norm = norm
         self.transf_cube = transf_cube
         self.device = device
+
+        # Set the appropriate transformation function based on the normalization mode
+        if self.norm == 'realimag':
+            self.trans_function = fft_real_imag_normalized
+        else:
+            self.trans_function = fourier_transform_spectral
 
     def __call__(self,
                  x: np.ndarray,
@@ -69,10 +133,10 @@ class FourierSpectralTransform:
         Returns:
             Tuple[torch.Tensor, np.ndarray, Dict[str, Any]]: Transformed image, original cube, metadata
         """
-        x_transformed = fourier_transform_spectral(x, self.norm, self.device, self.channel_first)
+        x_transformed = self.trans_function(x, self.norm, self.device, self.channel_first)
 
         if self.transf_cube: 
-            cube = fourier_transform_spectral(cube, self.norm, self.device, self.channel_first)
+            cube = self.trans_function(cube, self.norm, self.device, self.channel_first)
 
         return x_transformed, cube, meta
 

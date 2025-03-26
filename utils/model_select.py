@@ -12,14 +12,15 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
     '''
     model_str = configs.get("model")
     parc_str = model_str.split('_')
+     
     
     if 'seg-rec' in parc_str: 
-        if len(parc_str)>1: 
-            tot_channels = int(parc_str[1])
-        else: 
-            tot_channels = 61
+       
+        fromto = parc_str[1].split('to')
+        start = int(fromto[0])
+        tot_channels = int(fromto[1])
 
-        model = SegRecon_ViT_3D(C_input=31, total_channels=tot_channels)
+        model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels)
 
     elif model_str=='restormer': 
          model = Restormer(inp_channels=4,out_channels=61)      
