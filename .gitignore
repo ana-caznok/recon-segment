@@ -1,3 +1,5 @@
 notebooks/wandb/*
 wandb*
 models/*pth
+__pycache__/*
+*pyc
