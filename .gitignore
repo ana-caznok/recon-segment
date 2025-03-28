@@ -3,3 +3,8 @@ wandb*
 models/*pth
 __pycache__/*
 *pyc
+*.h5
+*.pth
+*.tiff
+__pycache__/*.pyc
+*.pyc

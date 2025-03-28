@@ -50,15 +50,33 @@ def transform_factory(index: str):
     
     elif index =='fft_D40_cube_gpu':
         return Compose([RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',True, True, 'cuda')])
-    elif index =='donws4_fft_D40_cube_gpu':
-        
-        return Compose([RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',True, True, 'cuda')])
     
+    elif index =='donws4_fft_D40_cube_gpu_shift':    
+        return Compose([Downsample(factor=4),RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',True, True, 'cuda', shift=True)])
     elif index =='downs4_fft_D40_cube_gpu':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('minmax',True, True , 'cuda')])
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('minmax',True, True , 'cuda', shift=False)])
+    
+    elif index =='donws4_fft_normal_cube_gpu_shift':    
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'),FourierSpectralTransform('minmax',True, True, 'cuda', shift=True)])
+    elif index =='downs4_fft_normal_cube_gpu':
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('minmax',True, True , 'cuda', shift=False)])
     
     elif index =='downs4_fft_double_D40_cube_gpu':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('realimag',True, True , 'cuda')])
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=False)])
+    elif index =='downs4_fft_double_D40_cube_gpu_shift':
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=True)])
+    
+    elif index =='downs4_fft_double_normal_cube_gpu':
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=False)])
+    elif index =='downs4_fft_double_normal_cube_gpu_shift':
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=True)])
+    
+    elif index =='downs4_fft_double-softmax_normal_cube_gpu_shift':
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('softmax',True, True , 'cuda', shift=True)])
+    
+
+    elif index =='downs4_fft_double_normal_cube_gpu_shift_continuous':
+        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=True, stack_type='continuous')])
     
     elif index =='downs2_fft_D40_x_gpu':
         return Compose([RGB2Pseudo_Hyp(base_path, 'D40'), Downsample(factor=2), FourierSpectralTransform('minmax',False, True , 'cuda')])

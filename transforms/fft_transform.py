@@ -3,7 +3,7 @@ import torch
 from typing import Tuple, Dict, Any
 
 
-def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str = 'cpu', channel_first = True) -> torch.Tensor:
+def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str = 'cpu', channel_first = True, shift = True, stack_tipe='None') -> torch.Tensor:
     """
     Apply a 1D Fourier Transform along the spectral (channel) dimension of a hyperspectral image.
     
@@ -21,6 +21,8 @@ def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str =
         dim = -1
     img_tensor = torch.tensor(img, dtype=torch.float32, device=device)  # [H, W, C]
     fft_result = torch.fft.fft(img_tensor, dim=dim)  # Apply FFT over spectral dim (C)
+    if shift: 
+        fft_result = torch.fft.fftshift(fft_result) # shift the frequency
     
     if norm == 'abs':
         fft_result = torch.abs(fft_result)
@@ -37,7 +39,7 @@ def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str =
 
     return fft_result
 
-def fft_real_imag_normalized(img: np.ndarray, norm: str = 'realimag', device: str = 'cpu', channel_first: bool = True) -> np.ndarray:
+def fft_real_imag_normalized(img: np.ndarray, norm: str = 'realimag', device: str = 'cpu', channel_first: bool = True, shift = True, stack_type='alternate') -> np.ndarray:
     """
     Apply FFT along the spectral dimension and return a normalized, interleaved real+imag output.
     Output shape will have 2x channels. Even = real, Odd = imag. Values in [0.0001, 1].
@@ -59,6 +61,8 @@ def fft_real_imag_normalized(img: np.ndarray, norm: str = 'realimag', device: st
 
     # Perform 1D FFT along the spectral/channel axis
     fft_result = torch.fft.fft(img_tensor, dim=dim)
+    if shift: 
+        fft_result = torch.fft.fftshift(fft_result) # shift the frequency
 
     # Extract the real and imaginary parts of the complex FFT result
     real = fft_result.real
@@ -72,20 +76,36 @@ def fft_real_imag_normalized(img: np.ndarray, norm: str = 'realimag', device: st
         # Normalize to [0, 1], avoiding divide-by-zero with small epsilon
         normed = (t - t_min) / (t_max - t_min + 1e-8)
         # Rescale to [0.0001, 1]
-        return normed * (1 - 0.0001) + 0.0001
+        return normed * (1 - 0.0001) + 0.0001 #does this inversion have to happen?? 
+    
+    def softmax_normalize(t):
+        # Apply softmax along spectral axis
+        t_exp = torch.exp(t - t.max(dim=dim, keepdim=True).values)
+        softmax = t_exp / t_exp.sum(dim=dim, keepdim=True)
+        return softmax * (1 - 0.0001) + 0.0001  # Rescale to [0.0001, 1]
 
-    # Normalize real and imaginary parts separately
-    real = normalize(real)
-    imag = normalize(imag)
+  
+    # Normalize real and imaginary parts separately : does it make sense? 
+    #real = normalize(real)
+    #imag = normalize(imag)
 
-    # Stack real and imaginary tensors along a new intermediate dimension
-    # This results in a shape like [2, C, H, W] or [H, W, 2, C], depending on layout
-    stacked = torch.stack([real, imag], dim=dim + 1 if not channel_first else dim + 1)
+    if stack_type == 'alternate':
+        # Stack real and imaginary tensors along a new intermediate dimension
+        # This results in a shape like [2, C, H, W] or [H, W, 2, C], depending on layout
+        # Interleave real and imaginary: even = real, odd = imag
+        stacked = torch.stack([real, imag], dim=dim + 1 if not channel_first else dim + 1)
+        # Even indices become real, odd indices become imaginary
+        # Final shape: (2C, H, W) or (H, W, 2C)
+        interleaved = stacked.flatten(start_dim=dim, end_dim=dim + 1)
+    else:
+        # Concatenate real then imaginary along the spectral dimension
+        interleaved = torch.cat([real, imag], dim=dim)
 
-    # Flatten the new 2-element stack into the spectral axis to interleave:
-    # Even indices become real, odd indices become imaginary
-    # Final shape: (2C, H, W) or (H, W, 2C)
-    interleaved = stacked.flatten(start_dim=dim, end_dim=dim + 1)
+    if norm == 'realimag': 
+        interleaved = normalize(interleaved)
+    if norm == 'softmax': 
+        interleaved = softmax_normalize(interleaved)
+
 
     if device == 'cuda': 
         interleaved = interleaved.cpu().numpy()
@@ -104,15 +124,19 @@ class FourierSpectralTransform:
                  norm: str = 'abs',
                  transf_cube: bool = False,
                  channel_first: bool = True, 
-                 device: str = 'cpu' 
+                 device: str = 'cpu', 
+                 shift: bool = True, 
+                 stack_type:str = 'alternate' 
                  ):
         self.channel_first = channel_first
         self.norm = norm
         self.transf_cube = transf_cube
         self.device = device
+        self.shift = shift
+        self.stack_type = stack_type
 
         # Set the appropriate transformation function based on the normalization mode
-        if self.norm == 'realimag':
+        if (self.norm == 'realimag') or (self.norm == 'softmax'):
             self.trans_function = fft_real_imag_normalized
         else:
             self.trans_function = fourier_transform_spectral
@@ -133,10 +157,10 @@ class FourierSpectralTransform:
         Returns:
             Tuple[torch.Tensor, np.ndarray, Dict[str, Any]]: Transformed image, original cube, metadata
         """
-        x_transformed = self.trans_function(x, self.norm, self.device, self.channel_first)
+        x_transformed = self.trans_function(x, self.norm, self.device, self.channel_first, self.shift, self.stack_type)
 
         if self.transf_cube: 
-            cube = self.trans_function(cube, self.norm, self.device, self.channel_first)
+            cube = self.trans_function(cube, self.norm, self.device, self.channel_first, self.shift, self.stack_type)
 
         return x_transformed, cube, meta
 
