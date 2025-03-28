@@ -25,6 +25,8 @@ from utils.configwandb import config2wandb
 from loss import loss_select
 from utils.fixed_save_checkpoint import fixed_save_checkpoint
 from utils.save_checkpoint_model import save_checkpoint
+from torchmetrics.image import StructuralSimilarityIndexMeasure
+from metrics.sam import SAMScore
 
 
 # Argument parser
@@ -138,6 +140,11 @@ for epoch in range(NUM_EPOCHS):
     model.eval()
     val_loss = 0.0
     i = 0
+    ssim_function = StructuralSimilarityIndexMeasure().to('cpu')
+    sam_function = SAMScore().to('cpu')
+    ssim = 0
+    sam = 0
+
     with torch.no_grad():
         for x, y, meta in tqdm(val_loader, desc="Validation"):
             x = x.to(DEVICE)
@@ -147,13 +154,20 @@ for epoch in range(NUM_EPOCHS):
             loss = criterion(output, y)
             val_loss += loss.item()
             i += 1
+            ssim += ssim_function(output.cpu(),y.cpu())
+            sam += sam_function(output.cpu(),y.cpu())
 
     avg_val_loss = val_loss / len(val_loader)
     val_history.append(avg_val_loss)
+    
+    avg_ssim = ssim/len(val_loader)
+    avg_sam = sam/len(val_loader)
 
     if config['wandb']:
         wandb.log({f"Validation Avg Loss {config['loss']}": avg_val_loss})
-        wandb.log({"epoch": epoch})
+        wandb.log({"val_epoch": epoch})
+        wandb.log({"SSIM": avg_ssim})
+        wandb.log({"SAM": avg_sam})
 
     print(f"Epoch {epoch+1}/{NUM_EPOCHS}: Train Loss = {avg_train_loss:.4f}, Val Loss = {avg_val_loss:.4f}")
 
