@@ -125,7 +125,7 @@ class RecDecoder(nn.Module):
 
 # Main Vision Transformer-based segmentation/reconstruction model
 class SegRecon_ViT_3D(nn.Module):
-    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12):
+    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12,ifft=False):
         super().__init__()
 
         # Store model configuration
@@ -134,6 +134,7 @@ class SegRecon_ViT_3D(nn.Module):
         self.emb_size = emb_size
         self.num_heads = num_heads
         self.patch_size = patch_size
+        self.ifft = ifft
 
         # Attention configuration for the transformer block
         config = VitAttentionConfig(
@@ -176,9 +177,11 @@ class SegRecon_ViT_3D(nn.Module):
         # Final channel projection
         x = self.out_conv(x)
         #print(x.size)
+        if self.ifft == False: 
+            # Clip output between 0 and 1
+            x = torch.clip(x,0,1)
 
-        # Clip output between 0 and 1
-        return torch.clip(x, 0, 1)
+        return x
 
 
 # Optional: summarize model architecture for debugging

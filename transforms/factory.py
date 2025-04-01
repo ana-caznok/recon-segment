@@ -1,97 +1,162 @@
 import os
-from transforms import RandomCrop, Compose, Downsample, RandomCropBB, DownsampleInput, RainbowTransformsnnUNet, RandomCropCenter, HistMatch, HistMatch_h5, RGB2Pseudo_Hyp, Spectrogram4D, FourierSpectralTransform
+from transforms import RandomCrop, Compose, Downsample, RandomCropBB, HistMatch_h5, RGB2Pseudo_Hyp, Spectrogram4D, FourierSpectralTransform, DownsampleInput, RainbowTransformsnnUNet, RandomCropCenter, HistMatch
 
-
-def transform_factory(index: str):
-    '''
-    Documents used transform using an index string
-    '''
+def get_base_path():
+    """Get the base path for loading data."""
     try: 
         base_path = os.environ.get("CODE_PATH") + '/'
     except: 
         base_path = '/media/ana-caznok/SSD-08/recon-segment/'
+    return base_path 
 
+
+def rgb2hyp_transf(rgb2hyp_file='D40', normalize=False):
+    """Helper to create RGB to Pseudo-Hyperspectral transform."""
+    return RGB2Pseudo_Hyp(get_base_path(), rgb2hyp_file, normalize)
+
+
+def fourier_transform(rgb2hyp_file='D40', downsample_factor=None, fft_norm='abs',
+                      double=False, cube=True, shift=False, 
+                      device='cuda', invert=False, stack_type='alternate'):
+    """Compose a transform including optional downsampling, RGB2Hyp, and spectral FFT."""
+    transforms = []
+    if downsample_factor:
+        transforms.append(Downsample(factor=downsample_factor))  # Downsample if specified
+    transforms.append(rgb2hyp_transf(rgb2hyp_file))  # Convert RGB to hyperspectral
+    transforms.append(FourierSpectralTransform(
+        norm=fft_norm,
+        double=double,
+        transf_cube=cube,
+        channel_first=True,
+        device=device,
+        shift=shift,
+        stack_type=stack_type,
+        invert=invert
+    ))
+    return Compose(transforms)  # Compose all into one transform
+
+
+def transform_factory(index: str):
+    """
+    Factory to create and return a specific image transformation pipeline
+    based on the input index string.
+    """
+    base_path = get_base_path()  # Resolve base path
+    string_split = index.split('_')  # Split the string by underscore for parsing
+
+    # Basic predefined transforms
     if index == "downsample_4_crop_64":
         return Compose([Downsample(factor=4), RandomCrop(width=64, height=64)])
     elif index == "downsample_4":
         return Downsample(factor=4)
     elif index == "downsample_2":
         return Downsample(factor=2)
-    
+
+    # Random spatial cropping
     elif index == "random_patch_64":
-        return RandomCrop(width=64, 
-                          height=64)
+        return RandomCrop(width=64, height=64)
     elif index == "random_patch_128":
-        return RandomCrop(width=128, 
-                          height=128)
+        return RandomCrop(width=128, height=128)
     elif index == "random_patch_256":
-        return RandomCrop(width=256, 
-                          height=256)
+        return RandomCrop(width=256, height=256)
     elif index == "random_patch_512":
-        return RandomCrop(width=512, 
-                          height=512)
-    
+        return RandomCrop(width=512, height=512)
+
+    # Bounding-box-based random crop
     elif index == 'random_crop_bb_downs_p085': 
-        return RandomCropBB(patch_size = 64, prob_in_bb = 0.85)
-    
-    elif index == 'rgb2hyp_D40': 
-        return RGB2Pseudo_Hyp(base_path, 'D40') 
-    
-    elif index == 'rgb2hyp_normal': 
-        
-        return RGB2Pseudo_Hyp(base_path, 'norm')
-    
-    elif index =='fft_D40_x_gpu':
-        
-        return Compose([RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',False, True , 'cuda')])
-    elif index =='fft_D40_x_cpu':
-        
-        return Compose([RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',False, True, 'cpu')])
-    
-    elif index =='fft_D40_cube_gpu':
-        return Compose([RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',True, True, 'cuda')])
-    
-    elif index =='donws4_fft_D40_cube_gpu_shift':    
-        return Compose([Downsample(factor=4),RGB2Pseudo_Hyp(base_path, 'D40'),FourierSpectralTransform('minmax',True, True, 'cuda', shift=True)])
-    elif index =='downs4_fft_D40_cube_gpu':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('minmax',True, True , 'cuda', shift=False)])
-    
-    elif index =='donws4_fft_normal_cube_gpu_shift':    
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'),FourierSpectralTransform('minmax',True, True, 'cuda', shift=True)])
-    elif index =='downs4_fft_normal_cube_gpu':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('minmax',True, True , 'cuda', shift=False)])
-    
-    elif index =='downs4_fft_double_D40_cube_gpu':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=False)])
-    elif index =='downs4_fft_double_D40_cube_gpu_shift':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=True)])
-    
-    elif index =='downs4_fft_double_normal_cube_gpu':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=False)])
-    elif index =='downs4_fft_double_normal_cube_gpu_shift':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=True)])
-    
-    elif index =='downs4_fft_double-softmax_normal_cube_gpu_shift':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('softmax',True, True , 'cuda', shift=True)])
-    
+        return RandomCropBB(patch_size=64, prob_in_bb=0.85)
 
-    elif index =='downs4_fft_double_normal_cube_gpu_shift_continuous':
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'norm'), FourierSpectralTransform('realimag',True, True , 'cuda', shift=True, stack_type='continuous')])
-    
-    elif index =='downs2_fft_D40_x_gpu':
-        return Compose([RGB2Pseudo_Hyp(base_path, 'D40'), Downsample(factor=2), FourierSpectralTransform('minmax',False, True , 'cuda')])
-    
-    elif index=='stft_D40_x_gpu': 
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'),Spectrogram4D(2, 5,32,'abs',device='cuda')])
-    elif index=='stft_D40_x_cpu': 
-        return Compose([Downsample(factor=4), RGB2Pseudo_Hyp(base_path, 'D40'),Spectrogram4D(2, 5,32,'abs',device='cpu')])
-    
+    # RGB to hyperspectral transforms
+    elif index == 'rgb2hyp_D40':
+        return rgb2hyp_transf('D40')
+    elif index == 'rgb2hyp_normal':
+        return rgb2hyp_transf('norm')
 
-    
-    elif index == 'hist_match_h5_04_and_patch_512': 
+    # FFT-based transforms
+    elif 'fft' in string_split:
+        # Determine downsample factor from prefix (e.g. 'downs4')
+        if 'downs' in string_split[0]:
+            factor = int(string_split[0].split('s')[1])
+        else:
+            factor = None
+
+        # Choose RGB2Hyp source
+        if 'D40' in index:
+            rgb2hyp_file = 'D40'
+        elif 'normal' in index:
+            rgb2hyp_file = 'norm'
+        else:
+            rgb2hyp_file = 'norm'
+
+        # Use cube format (3D) or not
+        if 'cube' in index:
+            transform_cube = True
+        elif 'x' in index:
+            transform_cube = False
+        else:
+            transform_cube = False
+
+        # Select device
+        device = 'cuda' if 'cuda' in index else 'cpu'
+
+        # Use double (real+imag channels)
+        double = 'double' in index
+
+        # Frequency shift toggle
+        shift_frequencies = 'shift' in index
+
+        # Stack output as alternate or continuous
+        stack_type = 'continuous' if 'continuous' in index else 'alternate'
+
+        # Invert toggle for FFT output
+        invert = 'invert' in index
+
+        # Choose normalization method
+        if 'minmax' in index:
+            fft_norm = 'minmax'
+        elif 'softmax' in index:
+            fft_norm = 'softmax'
+        elif 'none' in index:
+            fft_norm = 'None'
+        else:
+            fft_norm = 'abs'
+
+        # Compose and return the full FFT transform
+        return fourier_transform(
+            rgb2hyp_file,
+            downsample_factor=factor,
+            fft_norm=fft_norm,
+            double=double,
+            cube=transform_cube,
+            shift=shift_frequencies,
+            device=device,
+            invert=invert,
+            stack_type=stack_type
+        )
+
+    # STFT (spectrogram-based) transforms
+    elif index == 'stft_D40_x_gpu':
+        return Compose([
+            Downsample(factor=4),  # Downsample
+            rgb2hyp_transf('D40'),  # Convert to hyperspectral
+            Spectrogram4D(2, 5, 32, 'abs', device='cuda')  # Apply STFT
+        ])
+    elif index == 'stft_D40_x_cpu':
+        return Compose([
+            Downsample(factor=4),
+            rgb2hyp_transf('D40'),
+            Spectrogram4D(2, 5, 32, 'abs', device='cpu')
+        ])
+
+    # Histogram matching and patch extraction
+    elif index == 'hist_match_h5_04_and_patch_512':
         base_path = os.getenv('ICASP_H5')
-        return Compose([HistMatch_h5(base_path, 0.4), RandomCrop(width=512, height=512)])
+        return Compose([
+            HistMatch_h5(base_path, 0.4),
+            RandomCrop(width=512, height=512)
+        ])
+
+    # Default/fallback case
     else:
         print("WARNING: Using no transforms")
         return None
-    

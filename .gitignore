@@ -8,3 +8,5 @@ __pycache__/*
 *.tiff
 __pycache__/*.pyc
 *.pyc
+*.png
+plots/*

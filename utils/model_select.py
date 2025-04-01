@@ -20,7 +20,12 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
         start = int(fromto[0])
         tot_channels = int(fromto[1])
 
-        model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels)
+        if 'ifft' in model_str: 
+            need_ifft = True
+        else: 
+            need_ifft = False
+
+        model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, ifft=need_ifft)
 
     elif model_str=='restormer': 
          model = Restormer(inp_channels=4,out_channels=61)      

@@ -44,7 +44,7 @@ class RGB2Pseudo_Hyp():
 
 
         gain_function = scipy.io.loadmat(self.base_path + 'transforms/' + gain_path)
-        x = rgb2hyp(x,gain_function['filters'])
+        x = rgb2hyp(x,gain_function['filters'],self.norm)
 
         return x, y, m
 
