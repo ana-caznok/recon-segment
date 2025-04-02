@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=gpu-v100
 #SBATCH --gres=gpu:1
-#SBATCH --mem=5GB
+#SBATCH --mem=9GB
 #SBATCH --time=0-02:35:00
 # ====================================
 # Activate Conda and then the environment.
