@@ -15,6 +15,13 @@ def inverse_fft_from_real_imag(
     x_tensor = y_transformed.to(device)  # (B, 2C, H, W)
 
     if norm == 'minmax':
+        if meta['fft_ymin'].dim() < 4:
+            # Get the batch size from the 0th dimension
+            B = meta['fft_ymin'].shape[0] 
+            # Reshape both tensors to shape [B, 1, 1, 1]
+            meta['fft_ymin'] = meta['fft_ymin'].view(B, 1, 1, 1)
+            meta['fft_ymax'] = meta['fft_ymax'].view(B, 1, 1, 1)
+
         y_min = meta['fft_ymin'].to(device)  # shape (B, 1, 1, 1)
         y_max = meta['fft_ymax'].to(device)  # shape (B, 1, 1, 1)
 

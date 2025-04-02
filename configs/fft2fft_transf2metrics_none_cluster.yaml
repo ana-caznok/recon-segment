@@ -13,12 +13,12 @@ wandb: True
 train:
   batch_size: 5  
   lr: 0.0001  # 1e-4 faster initial lr 
-  epochs: 2 
-  transform_index: "downs4_fft_double_D40_minmax_cube_gpu_shift" # transforma a imagem e o objetivo em fft 
+  epochs: 50 
+  transform_index: "downs4_fft_double_D40_none_cube_gpu_shift" # transforma a imagem e o objetivo em fft 
 
 valid:
   batch_size: 5
-  transform_index: "downs4_fft_double_D40_minmax_cube_gpu_shift"
+  transform_index: "downs4_fft_double_D40_none_cube_gpu_shift"
 
 nworkers: 7
 

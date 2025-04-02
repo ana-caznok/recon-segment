@@ -13,6 +13,7 @@ import torch.optim as optim
 from tqdm import tqdm
 from typing import Optional, Callable, List, Dict, Tuple, Any
 from torch.utils.data import DataLoader, Dataset
+import shutil
 
 # Custom imports from project structure
 from fixed_dataset import FixedDataset
@@ -120,6 +121,11 @@ run = wandb.init(project="SegRecViT",
                             notes="Running experiment",
                             name=name)
 
+# Copy original config.yaml into W&B run directory
+shutil.copy('configs/' + config_file, os.path.join(wandb.run.dir, 'config.yaml'))
+artifact = wandb.Artifact("config", type="config")
+artifact.add_file(os.path.join(wandb.run.dir, 'config.yaml'))
+run.log_artifact(artifact)
 
 # ------------------ TRAIN LOOP -----------------------------------------------------------
 trn_history = []
@@ -176,6 +182,8 @@ for epoch in range(NUM_EPOCHS):
             val_loss += loss.item()
             i += 1
             if transform2metrics: 
+                print(f"meta shape {meta['fft_ymin'].shape}")
+                print(f'y shape {y.shape}')
                 y = ifft_y_function(y,meta)
                 output = ifft_y_function(output,meta)
 
@@ -209,7 +217,8 @@ for epoch in range(NUM_EPOCHS):
     if scheduler:
         scheduler.step()
 
-
+wandb.log({"final_SSIM": avg_ssim})
+wandb.log({"final_SAM": avg_sam})
 # ------------------ SAVE MODEL -------------------------------------------------------------------------------
 save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth', epoch, i, optimizer, avg_val_loss)
 print(f"Final Model saved to {SAVE_PATH}")

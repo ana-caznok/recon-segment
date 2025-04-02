@@ -13,24 +13,23 @@ wandb: True
 train:
   batch_size: 5  
   lr: 0.0001  # 1e-4 faster initial lr 
-  epochs: 2 
-  transform_index: "downs4_fft_double_D40_minmax_cube_gpu_shift" # transforma a imagem e o objetivo em fft 
+  epochs: 50 
+  transform_index: "downs4_fft_D40_minmax_gpu_shift" # nnunet transform simply doesnt work 
 
 valid:
   batch_size: 5
-  transform_index: "downs4_fft_double_D40_minmax_cube_gpu_shift"
+  transform_index: "downs4_fft_D40_minmax_gpu_shift"
 
 nworkers: 7
 
 task: 'recon'
 loss: "MSE"  
-model: 'seg-rec_62to122' 
+model: 'seg-rec_31to61' 
 base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
 preprocessing: h5py
 opt: "AdamW"  # adamW with 1e-5 weight decay
 scheduling: 0.998  # exponential learning rate decay
 ifft: False
-transform2metrics: True
 
 # Minimize sam instead of loss
 torchinfo: True
