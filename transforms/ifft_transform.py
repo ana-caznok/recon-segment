@@ -82,7 +82,7 @@ class InverseFourierSpectralTransform:
             shift=self.shift,
             stack_type=self.stack_type
         )
-        return torch.clip(y_transformed,0.0001,1.0001)
+        return torch.clip(y_transformed,0.0001,1.0001) #this is specific to hyperskin dataset
 
     def __str__(self):
         return f"InverseFourierSpectralTransform(norm={self.norm}, device={self.device}, shift={self.shift}, stack_type={self.stack_type})"

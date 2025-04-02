@@ -28,7 +28,7 @@ from utils.save_checkpoint_model import save_checkpoint
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 from metrics.sam import SAMScore
 from transforms.ifft_transform import InverseFourierSpectralTransform
-
+from transforms.inverse_factory import inverse_transform_factory
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Train 3D ViT model using YAML config.")
@@ -54,6 +54,8 @@ MODEL_NAME = config['model']
 fixed_checkpoint_name = config["fixed_checkpoint_name"]
 SAVE_STEPS = int(config['save_steps'])
 need_ifft = bool(config['ifft'])
+transform2metrics = bool(config['transform2metrics']) if 'transform2metrics' in config else False
+
 
 try:
     CODE_PATH = os.environ.get("CODE_PATH")
@@ -68,21 +70,11 @@ print('saving to :' + SAVE_PATH + fixed_checkpoint_name)
 
 
 if need_ifft: 
-    if 'shift' in TRANSFORM: 
-        shift_fft = True
-    else: 
-        shift_fft = False
-    if 'continuous' in TRANSFORM:
-        stack_type = 'continuous'
-    else: 
-        stack_type = 'alternate'
+    ifft_output_function = inverse_transform_factory(TRANSFORM,output=True)
 
-    ifft_function  = InverseFourierSpectralTransform(
-                    norm = 'minmax',
-                    channel_first = True, 
-                    device = 'cuda', 
-                    shift = shift_fft, 
-                    stack_type = stack_type)
+if transform2metrics: 
+    ifft_y_function = inverse_transform_factory(TRANSFORM,False)
+
 
 
 # ------------------ DATASET + LOADER -----------------------------------------
@@ -144,12 +136,7 @@ for epoch in range(NUM_EPOCHS):
         output = model(x)
 
         if need_ifft:
-            # Compute per-sample min/max
-            meta['fft_ymin'] = torch.amin(output, dim=(1, 2, 3), keepdim=True).detach()  # (B, 1, 1, 1)
-            meta['fft_ymax'] = torch.amax(output, dim=(1, 2, 3), keepdim=True).detach()  # (B, 1, 1, 1)
-            #print(f'output shape: {output.shape}')
-            #print(f"meta shape: {meta['fft_ymin'].shape}, {meta['fft_ymax'].shape}")
-            output = ifft_function(output, meta)
+            output = ifft_output_function(output, meta)
 
         loss = criterion(output, y)
         loss.backward()
@@ -181,13 +168,17 @@ for epoch in range(NUM_EPOCHS):
 
             output = model(x)
             if need_ifft: 
-                meta['fft_ymin'] = torch.amin(output, dim=(1, 2, 3), keepdim=True).detach()  # (B, 1, 1, 1)
-                meta['fft_ymax'] = torch.amax(output, dim=(1, 2, 3), keepdim=True).detach()  # (B, 1, 1, 1)
-                output = ifft_function(output,meta)
+                #meta['fft_ymin'] = torch.amin(output, dim=(1, 2, 3), keepdim=True).detach()  # (B, 1, 1, 1)
+                #meta['fft_ymax'] = torch.amax(output, dim=(1, 2, 3), keepdim=True).detach()  # (B, 1, 1, 1)
+                output = ifft_output_function(output,meta)
                 
             loss = criterion(output, y)
             val_loss += loss.item()
             i += 1
+            if transform2metrics: 
+                y = ifft_y_function(y,meta)
+                output = ifft_y_function(output,meta)
+
             ssim += ssim_function(output.cpu(),y.cpu())
             sam += sam_function(output.cpu(),y.cpu())
 

@@ -97,7 +97,7 @@ def transform_factory(index: str):
             transform_cube = False
 
         # Select device
-        device = 'cuda' if 'cuda' in index else 'cpu'
+        device = 'cuda' if 'gpu' in index else 'cpu'
 
         # Use double (real+imag channels)
         double = 'double' in index
