@@ -1,0 +1,29 @@
+wandb: Currently logged in as: ana_caznok (rainbow-ai) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+WARNING: Setting fixed_checkpoint_name as fft2fft_cluster
+SAVE_PATH: /home/ana.caznoksilveira/recon-segment/models/
+saving to :/home/ana.caznoksilveira/recon-segment/models/fft2fft_cluster
+Loading from hdf files
+Number of face masks 234. Checking face mask integrity...: 0it [00:00, ?it/s]Checking face mask integrity...: 234it [00:00, 801197.66it/s]
+initialized 234 images train DatasetRaw with preprocessing: h5py in /home/ana.caznoksilveira/icasp/icasp/data/Link_2 with transform 
+0: Downsample by a factor of 4
+1: RGB2Pseudo_Hyp with: /home/ana.caznoksilveira/recon-segment/ and camera D40
+2: FourierSpectralTransform(norm=minmax,double RealImag=True ,transform cube=True, device=cpu, shift=True,stack_type=alternate, invert=False ). Fold: None
+Loading from hdf files
+Number of face masks 30. Checking face mask integrity...: 0it [00:00, ?it/s]Checking face mask integrity...: 30it [00:00, 485826.72it/s]
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
+wandb: Currently logged in as: ana_caznok (rainbow-ai) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.19.7
+wandb: Run data is saved locally in /home/ana.caznoksilveira/recon-segment/wandb/run-20250402_095115-npmstlmh
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run fft2fft_cluster
+wandb: ⭐️ View project at https://wandb.ai/rainbow-ai/SegRecViT
+wandb: 🚀 View run at https://wandb.ai/rainbow-ai/SegRecViT/runs/npmstlmh
+initialized 30 images val DatasetRaw with preprocessing: h5py in /home/ana.caznoksilveira/icasp/icasp/data/Link_2 with transform 
+0: Downsample by a factor of 4
+1: RGB2Pseudo_Hyp with: /home/ana.caznoksilveira/recon-segment/ and camera D40
+2: FourierSpectralTransform(norm=minmax,double RealImag=True ,transform cube=True, device=cpu, shift=True,stack_type=alternate, invert=False ). Fold: None
+Selected model seg-rec_62to122: SegRecon_ViT_3D
+Selecting loss: MSE
+Epoch 1/50 - Training:   0%|          | 0/47 [00:00<?, ?it/s]Epoch 1/50 - Training:   2%|▏         | 1/47 [00:30<23:20, 30.44s/it]Epoch 1/50 - Training:   4%|▍         | 2/47 [00:49<17:50, 23.78s/it]Epoch 1/50 - Training:   6%|▋         | 3/47 [01:09<16:02, 21.87s/it]Epoch 1/50 - Training:   9%|▊         | 4/47 [01:29<15:10, 21.17s/it]Epoch 1/50 - Training:  11%|█         | 5/47 [01:51<15:00, 21.45s/it]Epoch 1/50 - Training:  13%|█▎        | 6/47 [02:10<14:09, 20.71s/it]Epoch 1/50 - Training:  15%|█▍        | 7/47 [02:29<13:31, 20.30s/it]Epoch 1/50 - Training:  17%|█▋        | 8/47 [02:50<13:10, 20.27s/it]Epoch 1/50 - Training:  19%|█▉        | 9/47 [03:11<13:03, 20.62s/it]Epoch 1/50 - Training:  21%|██▏       | 10/47 [03:31<12:41, 20.57s/it]Epoch 1/50 - Training:  23%|██▎       | 11/47 [03:53<12:34, 20.97s/it]Epoch 1/50 - Training:  26%|██▌       | 12/47 [04:14<12:10, 20.86s/it]Epoch 1/50 - Training:  28%|██▊       | 13/47 [04:33<11:34, 20.41s/it]Epoch 1/50 - Training:  30%|██▉       | 14/47 [04:52<10:58, 19.95s/it]Epoch 1/50 - Training:  32%|███▏      | 15/47 [05:13<10:43, 20.11s/it]Epoch 1/50 - Training:  34%|███▍      | 16/47 [05:31<10:10, 19.71s/it]Epoch 1/50 - Training:  36%|███▌      | 17/47 [05:53<10:06, 20.22s/it]Epoch 1/50 - Training:  38%|███▊      | 18/47 [06:11<09:26, 19.53s/it]Epoch 1/50 - Training:  40%|████      | 19/47 [06:32<09:19, 19.97s/it]Epoch 1/50 - Training:  43%|████▎     | 20/47 [06:52<09:01, 20.06s/it]Epoch 1/50 - Training:  45%|████▍     | 21/47 [07:10<08:27, 19.51s/it]Epoch 1/50 - Training:  47%|████▋     | 22/47 [07:30<08:07, 19.52s/it]Epoch 1/50 - Training:  49%|████▉     | 23/47 [07:50<07:49, 19.58s/it]Epoch 1/50 - Training:  51%|█████     | 24/47 [08:10<07:34, 19.78s/it]Epoch 1/50 - Training:  53%|█████▎    | 25/47 [08:30<07:15, 19.80s/it]Epoch 1/50 - Training:  55%|█████▌    | 26/47 [08:50<06:58, 19.94s/it]Epoch 1/50 - Training:  57%|█████▋    | 27/47 [09:11<06:42, 20.14s/it]Epoch 1/50 - Training:  60%|█████▉    | 28/47 [09:31<06:24, 20.22s/it]Epoch 1/50 - Training:  62%|██████▏   | 29/47 [09:50<05:58, 19.90s/it]Epoch 1/50 - Training:  64%|██████▍   | 30/47 [10:11<05:41, 20.10s/it]Epoch 1/50 - Training:  66%|██████▌   | 31/47 [10:30<05:16, 19.78s/it]Epoch 1/50 - Training:  68%|██████▊   | 32/47 [10:49<04:55, 19.69s/it]Epoch 1/50 - Training:  70%|███████   | 33/47 [11:09<04:37, 19.80s/it]Epoch 1/50 - Training:  72%|███████▏  | 34/47 [11:30<04:22, 20.21s/it]Epoch 1/50 - Training:  74%|███████▍  | 35/47 [11:49<03:57, 19.83s/it]Epoch 1/50 - Training:  77%|███████▋  | 36/47 [12:09<03:39, 19.91s/it]Epoch 1/50 - Training:  79%|███████▊  | 37/47 [12:29<03:19, 19.91s/it]Epoch 1/50 - Training:  81%|████████  | 38/47 [12:51<03:03, 20.44s/it]Epoch 1/50 - Training:  83%|████████▎ | 39/47 [13:09<02:37, 19.69s/it]Epoch 1/50 - Training:  85%|████████▌ | 40/47 [13:29<02:18, 19.75s/it]Epoch 1/50 - Training:  87%|████████▋ | 41/47 [13:47<01:55, 19.21s/it]Epoch 1/50 - Training:  89%|████████▉ | 42/47 [14:06<01:36, 19.34s/it]Epoch 1/50 - Training:  91%|█████████▏| 43/47 [14:27<01:19, 19.77s/it]Epoch 1/50 - Training:  94%|█████████▎| 44/47 [14:48<01:00, 20.18s/it]Epoch 1/50 - Training:  96%|█████████▌| 45/47 [15:08<00:39, 19.91s/it]Epoch 1/50 - Training:  98%|█████████▊| 46/47 [15:29<00:20, 20.24s/it]Epoch 1/50 - Training: 100%|██████████| 47/47 [15:45<00:00, 18.99s/it]Epoch 1/50 - Training: 100%|██████████| 47/47 [15:45<00:00, 20.11s/it]
+Validation:   0%|          | 0/6 [00:00<?, ?it/s]/var/spool/slurmd/job34350835/slurm_script: line 23: 1777589 Killed                  python train_seg_rec.py --config configs/fft2fft_cluster.yaml
+slurmstepd: error: Detected 1 oom_kill event in StepId=34350835.batch. Some of the step tasks have been OOM Killed.
