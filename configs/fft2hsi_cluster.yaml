@@ -11,16 +11,16 @@ save_steps: 20
 wandb: True
 
 train:
-  batch_size: 5  
+  batch_size: 6  
   lr: 0.0001  # 1e-4 faster initial lr 
   epochs: 50 
-  transform_index: "downs4_fft_D40_minmax_gpu_shift" # nnunet transform simply doesnt work 
+  transform_index: "downs4_fft_normal_minmax_gpu_shift" # nnunet transform simply doesnt work 
 
 valid:
-  batch_size: 5
-  transform_index: "downs4_fft_D40_minmax_gpu_shift"
+  batch_size: 6
+  transform_index: "downs4_fft_normal_minmax_gpu_shift"
 
-nworkers: 7
+nworkers: 8
 
 task: 'recon'
 loss: "MSE"  
