@@ -7,7 +7,7 @@
 #SBATCH --partition=gpu-v100
 #SBATCH --gres=gpu:1
 #SBATCH --mem=9GB
-#SBATCH --time=0-28:00:00
+#SBATCH --time=0-24:00:00
 #SBATCH --output=none_fft2ifft2hsi.out
 # ====================================
 # Activate Conda and then the environment.
