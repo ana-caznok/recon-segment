@@ -1,6 +1,6 @@
 #! /bin/bash
 # ====================================
-#SBATCH --job-name=segrec-test
+#SBATCH --job-name=segrecifft
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=9
