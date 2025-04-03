@@ -3,6 +3,7 @@ wandb*
 models/*pth
 __pycache__/*
 *pyc
+*.pyc
 *.h5
 *.pth
 *.tiff

@@ -14,7 +14,7 @@ def rgb2hyp(rgb,gain_function,norm = False):
     pseudo_hyp[c,:,:] = rgb[0,:,:]*gain_function[c,0] + rgb[1,:,:]*gain_function[c,1] + rgb[2,:,:]*gain_function[c,2]
   
   if norm: 
-     pseudo_hyp = (pseudo_hyp - pseudo_hyp.min())/(pseudo_hyp.max() - pseudo_hyp.min())
+     pseudo_hyp = (pseudo_hyp - pseudo_hyp.min() + 0.001)/(pseudo_hyp.max() - pseudo_hyp.min())
   
   return pseudo_hyp
 

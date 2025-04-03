@@ -35,11 +35,16 @@ def inverse_transform_factory(index: str,
         my_norm = 'minmax'
     else: 
         my_norm = 'None'
+    
+    if 'cpu' in index: 
+        my_device = 'cpu'
+    else: 
+        my_device = 'cuda'
 
     ifft_function  = InverseFourierSpectralTransform(
                     norm = my_norm,
                     channel_first = True, 
-                    device = 'cuda', 
+                    device = my_device, 
                     shift = shift_fft, 
                     stack_type = stack_type)
     

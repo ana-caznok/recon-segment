@@ -12,17 +12,17 @@ def get_base_path():
 
 def rgb2hyp_transf(rgb2hyp_file='D40', normalize=False):
     """Helper to create RGB to Pseudo-Hyperspectral transform."""
-    return RGB2Pseudo_Hyp(get_base_path(), rgb2hyp_file, normalize)
+    return RGB2Pseudo_Hyp(get_base_path(), rgb2hyp_file, normalize) # PROVAVELMENTE NORMALIZE PRECISE SER SEMPRE TRUE
 
 
-def fourier_transform(rgb2hyp_file='D40', downsample_factor=None, fft_norm='abs',
+def fourier_transform(rgb2hyp_file='D40', pseudohyp_norm = False, downsample_factor=None, fft_norm='abs',
                       double=False, cube=True, shift=False, 
                       device='cuda', invert=False, stack_type='alternate'):
     """Compose a transform including optional downsampling, RGB2Hyp, and spectral FFT."""
     transforms = []
     if downsample_factor:
         transforms.append(Downsample(factor=downsample_factor))  # Downsample if specified
-    transforms.append(rgb2hyp_transf(rgb2hyp_file))  # Convert RGB to hyperspectral
+    transforms.append(rgb2hyp_transf(rgb2hyp_file, pseudohyp_norm))  # Convert RGB to hyperspectral
     transforms.append(FourierSpectralTransform(
         norm=fft_norm,
         double=double,
@@ -69,11 +69,15 @@ def transform_factory(index: str):
     # RGB to hyperspectral transforms
     elif index == 'rgb2hyp_D40':
         return rgb2hyp_transf('D40')
-    elif index == 'rgb2hyp_normal':
-        return rgb2hyp_transf('norm')
+    elif index == 'rgb2hyp_cie':
+        return rgb2hyp_transf('cie')
+    elif index == 'rgb2hyp_cie_norm':
+        return rgb2hyp_transf('cie', True)
 
     # FFT-based transforms
     elif 'fft' in string_split:
+        pseudohyp_norm = False
+
         # Determine downsample factor from prefix (e.g. 'downs4')
         if 'downs' in string_split[0]:
             factor = int(string_split[0].split('s')[1])
@@ -84,9 +88,9 @@ def transform_factory(index: str):
         if 'D40' in index:
             rgb2hyp_file = 'D40'
         elif 'normal' in index:
-            rgb2hyp_file = 'norm'
+            rgb2hyp_file = 'cie'
         else:
-            rgb2hyp_file = 'norm'
+            rgb2hyp_file = 'cie'
 
         # Use cube format (3D) or not
         if 'cube' in index:
@@ -118,12 +122,14 @@ def transform_factory(index: str):
             fft_norm = 'softmax'
         elif 'none' in index:
             fft_norm = 'None'
+            pseudohyp_norm = True
         else:
             fft_norm = 'abs'
 
         # Compose and return the full FFT transform
         return fourier_transform(
             rgb2hyp_file,
+            pseudohyp_norm,
             downsample_factor=factor,
             fft_norm=fft_norm,
             double=double,

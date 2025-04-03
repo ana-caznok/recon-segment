@@ -2,6 +2,7 @@ from torch import nn
 from typing import Dict, Any
 from seg_recon_vit3d import *
 from Restormer import Restormer
+from seg_recon_vit3d_stable import *
 
 
 def model_select(configs: Dict[str, Any]) -> nn.Module:
@@ -24,11 +25,17 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
             need_ifft = True
         else: 
             need_ifft = False
-
-        model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, ifft=need_ifft)
+        
+        if 'stable' in parc_str: 
+            model = SegRecon_ViT_3D_StableTrain(C_input=start, total_channels=tot_channels, ifft=need_ifft)
+        
+        else: 
+            model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, ifft=need_ifft)
 
     elif model_str=='restormer': 
-         model = Restormer(inp_channels=4,out_channels=61)      
+         model = Restormer(inp_channels=4,out_channels=61)
+
+      
     
     
     print(f"Selected model {model_str}: {model.__class__.__name__}")
