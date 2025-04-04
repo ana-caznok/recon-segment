@@ -154,7 +154,7 @@ class ExtraDecoder(nn.Module):
 
 # Main Vision Transformer-based segmentation/reconstruction model
 class SegRecon_ViT_3D_StableTrain(nn.Module):
-    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12,ifft=True):
+    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12,xminmax = False,ifft=True):
         super().__init__()
 
         # Store model configuration
@@ -164,6 +164,7 @@ class SegRecon_ViT_3D_StableTrain(nn.Module):
         self.num_heads = num_heads
         self.patch_size = patch_size
         self.ifft = ifft
+        self.xminmax = xminmax
 
         # Attention configuration for the transformer block
         config = VitAttentionConfig(
@@ -199,7 +200,13 @@ class SegRecon_ViT_3D_StableTrain(nn.Module):
         if Y % self.patch_size != 0 or X % self.patch_size != 0:
             raise ValueError(f"Input dimensions ({Y}, {X}) must be divisible by patch size {self.patch_size}.")
         
-        ymin, ymax = self.minmaxdecoder(x_input.mean(dim=(1,2,3)), x_input.std(dim=(1,2,3)))
+        if self.xminmax: 
+            x_min = x_input.view(x_input.size(0), -1).min(dim=1).values  # shape: (B,)
+            x_max = x_input.view(x_input.size(0), -1).max(dim=1).values  # shape: (B,)
+            ymin, ymax = self.minmaxdecoder(x_min, x_max)
+            
+        else: 
+            ymin, ymax = self.minmaxdecoder(x_input.mean(dim=(1,2,3)), x_input.std(dim=(1,2,3)))
 
         # Encoder: embedd image patches and apply self attention     
         x,h,w = self.encoder(x_input) # outputs (B, T, E), H, W, with h*w = T, H is the number of vertical and W of horizontal patches 
