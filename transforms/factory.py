@@ -65,14 +65,29 @@ def transform_factory(index: str):
     # Bounding-box-based random crop
     elif index == 'random_crop_bb_downs_p085': 
         return RandomCropBB(patch_size=64, prob_in_bb=0.85)
+    
 
-    # RGB to hyperspectral transforms
-    elif index == 'rgb2hyp_D40':
-        return rgb2hyp_transf('D40')
-    elif index == 'rgb2hyp_cie':
-        return rgb2hyp_transf('cie')
-    elif index == 'rgb2hyp_cie_norm':
-        return rgb2hyp_transf('cie', True)
+    elif 'rgb2hyp' in string_split:
+        # Determine downsample factor from prefix (e.g. 'downs4')
+        if 'downs' in string_split[0]:
+            factor = int(string_split[0].split('s')[1])
+        else:
+            factor = None
+
+        # Choose RGB2Hyp source
+        if 'D40' in index:
+            rgb2hyp_file = 'D40'
+        elif 'normal' in index:
+            rgb2hyp_file = 'cie'
+        else:
+            rgb2hyp_file = 'cie'
+
+        if 'norm01' in index: 
+            normalization = True
+        else: 
+            normalization = False
+
+        return Compose([Downsample(factor=factor), rgb2hyp_transf(rgb2hyp_file, normalization)])
 
     # FFT-based transforms
     elif 'fft' in string_split:
