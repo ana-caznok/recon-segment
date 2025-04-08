@@ -55,6 +55,7 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
 
         # If W&B run ID is in checkpoint, resume it
         wandb_id = checkpoint.get('wandb_run_id', None)
+        wandb_id = configs['resume_wandb_id']
         configs['wandb_id'] = wandb_id
         if wandb_id:
             print(f"Resuming W&B run ID: {wandb_id}")
