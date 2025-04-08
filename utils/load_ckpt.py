@@ -42,7 +42,7 @@ def load_best_ckpt(model: nn.Module, configs: Dict[str, Any], exact_only=False, 
         if os.path.isfile(resume_file):
             print("=> Loading model from checkpoint: '{}'".format(resume_file))
             checkpoint = torch.load(resume_file, map_location=torch.device('cpu'))
-            model.load_state_dict(checkpoint['state_dict'])
+            model.load_state_dict(checkpoint['state_dict'], strict=False)
             try:
                 best_loss = checkpoint['best_loss']
             except:

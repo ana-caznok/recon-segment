@@ -99,8 +99,11 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 # ------------------ MODEL AND OPTIMIZER -------------------------------------------------
 
-model = model_select(config).to(DEVICE) # Select model and loss function
+model, config = model_select(config)
+model = model.to(DEVICE) # Select model and loss function
 criterion = loss_select(config)
+
+start_epoch = config.get("start_epoch", 0)
 
 
 optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
@@ -114,23 +117,26 @@ if config.get("scheduler", False):
 # ------------------ INITIALIZING WANDB ---------------------------------------------------
 
 name = os.path.basename(config_file).replace(".yaml", '')
-run = wandb.init(project="SegRecViT",
-                            reinit=True,
-                            config = config2wandb(config), 
-                            entity= 'rainbow-ai', 
-                            notes="Running experiment",
-                            name=name)
 
-# Copy original config.yaml into W&B run directory
-shutil.copy('configs/' + config_file, os.path.join(wandb.run.dir, 'config.yaml'))
-artifact = wandb.Artifact("config", type="config")
-artifact.add_file(os.path.join(wandb.run.dir, 'config.yaml'))
-run.log_artifact(artifact)
+if 'wandb_id' not in config.keys():
+    print('entrei aqui')
+    run = wandb.init(project="SegRecViT",
+                    reinit=True,
+                    config = config2wandb(config), 
+                    entity= 'rainbow-ai', 
+                    notes="Running experiment",
+                    name=name)
+
+    # Copy original config.yaml into W&B run directory
+    shutil.copy('configs/' + config_file, os.path.join(wandb.run.dir, 'config.yaml'))
+    artifact = wandb.Artifact("config", type="config")
+    artifact.add_file(os.path.join(wandb.run.dir, 'config.yaml'))
+    run.log_artifact(artifact)
 
 # ------------------ TRAIN LOOP -----------------------------------------------------------
 trn_history = []
 val_history = []
-for epoch in range(NUM_EPOCHS):
+for epoch in range(start_epoch,NUM_EPOCHS):
     model.train()
     train_loss = 0.0
     for x, y, meta in tqdm(train_loader, desc=f"Epoch {epoch+1}/{NUM_EPOCHS} - Training"):
@@ -206,11 +212,11 @@ for epoch in range(NUM_EPOCHS):
 
     if avg_val_loss == np.array(val_history).min(): 
 
-        save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth', epoch, i, optimizer, avg_val_loss)
+        save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth', epoch, i, optimizer, avg_val_loss, disable= False, wandb_id= wandb.run.id)
         print(f"Best model saved to {SAVE_PATH + fixed_checkpoint_name}")
     
     if epoch%SAVE_STEPS ==0: 
-        save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth' , epoch, i, optimizer, avg_val_loss)
+        save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth' , epoch, i, optimizer, avg_val_loss, disable= False, wandb_id= wandb.run.id)
         print(f"Step model saved to {SAVE_PATH + fixed_checkpoint_name}")
     
      # Step scheduler
@@ -220,7 +226,7 @@ for epoch in range(NUM_EPOCHS):
 wandb.log({"final_SSIM": avg_ssim})
 wandb.log({"final_SAM": avg_sam})
 # ------------------ SAVE MODEL -------------------------------------------------------------------------------
-save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth', epoch, i, optimizer, avg_val_loss)
+save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth', epoch, i, optimizer, avg_val_loss, disable= False, wandb_id= wandb.run.id)
 print(f"Final Model saved to {SAVE_PATH}")
 
 

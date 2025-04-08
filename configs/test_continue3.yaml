@@ -1,0 +1,35 @@
+save_checkpoint_path: 'models/'  # modificado
+
+fixed_checkpoint_name: 'models/test_continue3.pth'
+pretrained_path: null
+continue_model_path: null
+resume_wandb_id: 'vh81oxgw'
+
+evaluate_step: 20   # will never happen if higher than dataset size
+save_steps: 20
+
+wandb: True
+
+train:
+  batch_size: 6  
+  lr: 0.0001  # 1e-4 faster initial lr 
+  epochs: 5 
+  transform_index: "downs4_fft_D40_minmax_cpu_shift" # nnunet transform simply doesnt work 
+
+valid:
+  batch_size: 6
+  transform_index: "downs4_fft_D40_minmax_cpu_shift"
+
+nworkers: 6
+
+task: 'recon'
+loss: "MSE"  
+model: 'seg-rec_31to61' 
+base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
+preprocessing: h5py
+opt: "AdamW"  # adamW with 1e-5 weight decay
+scheduling: 0.998  # exponential learning rate decay
+ifft: False
+
+# Minimize sam instead of loss
+torchinfo: True

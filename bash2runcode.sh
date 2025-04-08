@@ -15,5 +15,8 @@ export DATA_PATH="/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2"
 
 #python train_seg_rec.py --config configs/stable_fft2ifft2hsi_none_cluster_xmin.yaml
 
-python train_seg_rec.py --config configs/pseudohsi2hsi_D40.yaml
+#python train_seg_rec.py --config configs/pseudohsi2hsi_D40.yaml
+
+
+python train_seg_rec.py --config configs/test_continue2.yaml
 

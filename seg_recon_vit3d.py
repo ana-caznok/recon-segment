@@ -32,7 +32,9 @@ class Embedd(nn.Module):
         )
 
         # Positional embedding will be initialized dynamically based on input size
-        self.position_embedding = None
+        #self.position_embedding = None
+        self.register_buffer('position_embedding', None, persistent=False)
+
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         # Apply patch embedding via Conv2D -> shape: (B, embed_dim, H', W')
