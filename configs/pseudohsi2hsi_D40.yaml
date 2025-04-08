@@ -1,9 +1,9 @@
 save_checkpoint_path: 'models/'  # modificado
 
-fixed_checkpoint_name: 'test_ifft.pth'
-pretrained_path: null
+fixed_checkpoint_name: 'models/pseudohsi2hsi_D40.pth'
+pretrained_path: 'models/pseudohsi2hsi_D40.pth'
 continue_model_path: null
-resume_wandb_id: 'vo2sayaq'
+resume_wandb_id: '7ias26is'
 
 evaluate_step: 20   # will never happen if higher than dataset size
 save_steps: 20
