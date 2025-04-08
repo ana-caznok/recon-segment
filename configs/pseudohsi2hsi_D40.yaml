@@ -3,7 +3,7 @@ save_checkpoint_path: 'models/'  # modificado
 fixed_checkpoint_name: 'models/pseudohsi2hsi_D40.pth'
 pretrained_path: 'models/pseudohsi2hsi_D40.pth'
 continue_model_path: null
-resume_wandb_id: '7ias26is'
+resume_wandb_id: 'bqti4kxs'
 
 evaluate_step: 20   # will never happen if higher than dataset size
 save_steps: 20
