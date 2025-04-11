@@ -8,7 +8,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=7GB
 #SBATCH --time=0-24:00:00
-#SBATCH --output=stable_1000_xmin_fft2ifft2hsi.out
+#SBATCH --output=msi2hsi_1000.out
 # ====================================
 # Activate Conda and then the environment.
 

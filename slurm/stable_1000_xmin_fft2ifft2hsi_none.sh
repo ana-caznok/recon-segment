@@ -22,4 +22,4 @@ wandb login
 cd /home/ana.caznoksilveira/recon-segment
 
 
-python train_seg_rec.py --config configs/stable_1000_fft2ifft2hsi_none_cluster_xmin.yaml
+python train_seg_rec.py --config configs/stable_fft2ifft2hsi_1000_none_cluster_xmin.yaml
