@@ -3,7 +3,8 @@ import torch
 from typing import Tuple, Dict, Any
 
 
-def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str = 'cpu', channel_first = True, shift = True, stack_tipe='None', invert = False) -> torch.Tensor:
+def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str = 'cpu', channel_first = True, shift = True, 
+                               stack_tipe='None', invert = False, return_numpy=False) -> torch.Tensor:
     """
     Apply a 1D Fourier Transform along the spectral (channel) dimension of a hyperspectral image.
     
@@ -19,7 +20,12 @@ def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str =
         dim = 0 
     else: 
         dim = -1
-    img_tensor = torch.tensor(img, dtype=torch.float32, device=device)  # [H, W, C]
+    
+    if torch.is_tensor(img): #converts to tensor only if it was not previously a tensor  
+        img_tensor = img
+    else: 
+        img_tensor = torch.tensor(img, dtype=torch.float32, device=device)  # [H, W, C]
+
     fft_result = torch.fft.fft(img_tensor, dim=dim)  # Apply FFT over spectral dim (C)
     if shift: 
         fft_result = torch.fft.fftshift(fft_result,dim=dim) # shift the frequency
@@ -34,15 +40,17 @@ def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str =
         fft_result = (torch.abs(fft_result) - min_vals) / (max_vals - min_vals + 0.0001)  # Avoid div by zero
         if invert: 
             fft_result = fft_result*(-1) + 1
-    
-    if device =='cuda': 
-        fft_result = fft_result.cpu().numpy()
-    else: 
-        fft_result = fft_result.numpy()
+            
+    if return_numpy: 
+        if device =='cuda': 
+            fft_result = fft_result.cpu().numpy()
+        else: 
+            fft_result = fft_result.numpy()
 
     return fft_result, min_vals, max_vals
 
-def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'cpu', channel_first: bool = True, shift = True, stack_type='alternate', invert=False,) -> np.ndarray:
+def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'cpu', channel_first: bool = True, 
+                         shift = True, stack_type='alternate', invert=False, return_numpy=False) -> np.ndarray:
     """
     Apply FFT along the spectral dimension and return a normalized, interleaved real+imag output.
     Output shape will have 2x channels. Even = real, Odd = imag. Values in [0.0001, 1].
@@ -92,10 +100,6 @@ def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'c
         softmax = t_exp / t_exp.sum(dim=dim, keepdim=True)
         return softmax * (1 - 0.0001) + 0.0001, t_min, t_max  # Rescale to [0.0001, 1]
 
-  
-    # Normalize real and imaginary parts separately : does it make sense? 
-    #real = normalize(real)
-    #imag = normalize(imag)
 
     if stack_type == 'alternate':
         # Stack real and imaginary tensors along a new intermediate dimension
@@ -119,11 +123,11 @@ def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'c
     if invert:
         interleaved = interleaved*(-1) + 1 
 
-
-    if device == 'cuda': 
-        interleaved = interleaved.cpu().numpy()
-    else: 
-        interleaved = interleaved.numpy()
+    if return_numpy: 
+        if device == 'cuda': 
+            interleaved = interleaved.cpu().numpy()
+        else: 
+            interleaved = interleaved.numpy()
 
     # Return the result as a NumPy array on CPU
     return interleaved, t_min, t_max
@@ -141,7 +145,8 @@ class FourierSpectralTransform:
                  device: str = 'cpu', 
                  shift: bool = True, 
                  stack_type:str = 'alternate', 
-                 invert:bool = False
+                 invert:bool = False, 
+                 return_numpy = False
                  ):
         self.double = double
         self.channel_first = channel_first
@@ -151,6 +156,7 @@ class FourierSpectralTransform:
         self.shift = shift
         self.stack_type = stack_type
         self.invert = invert
+        self.return_numpy = return_numpy
 
         # Set the appropriate transformation function based on the normalization mode
         if self.double == True: 

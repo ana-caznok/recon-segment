@@ -42,12 +42,6 @@ class FixedDataset(Dataset):
         if self.preprocessing == "None":
             print("WARNING: interpreting None string as None type")
             self.preprocessing = None
-        # base_path_ana = os.getenv("ICASP_DOWNSAMPLED")
-#base_path_ana= '/mnt/datassd/icasp/data/preprocessed/downsampled'
-#preprocessing = "downsampled"
-
-#base_path_ana= '/mnt/datassd/icasp/data/raw/Link_2/'
-#preprocessing = None
 
         if self.preprocessing is None:
             fmt = "*.mat"
@@ -266,12 +260,12 @@ class FixedDataset(Dataset):
         if self.transform is not None:
             msi_input, target, metadata = self.transform(msi_input, target, metadata)
 
-        # Torch conversion is not in transforms from transform_factory
-        msi_input = torch.from_numpy(msi_input).float()
+        # Torch conversion might be in transforms from transform_factory
+        msi_input = torch.from_numpy(msi_input).float() if isinstance(msi_input, np.ndarray) else msi_input
         
         # Target might be "None" in test
         if not isinstance(target, str):
-            target = torch.from_numpy(target).float()
+            target = torch.from_numpy(target) if isinstance(target, np.ndarray) else target
 
         if mask_ID is not None:
             metadata["mask"] = torch.from_numpy(metadata["mask"]).float()

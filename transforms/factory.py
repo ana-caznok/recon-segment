@@ -31,7 +31,8 @@ def fourier_transform(rgb2hyp_file='D40', pseudohyp_norm = False, downsample_fac
         device=device,
         shift=shift,
         stack_type=stack_type,
-        invert=invert
+        invert=invert, 
+        return_numpy=False
     ))
     return Compose(transforms)  # Compose all into one transform
 
@@ -116,7 +117,7 @@ def transform_factory(index: str):
             transform_cube = False
 
         # Select device
-        device = 'cuda' if 'gpu' in index else 'cpu'
+        device = 'cuda' if 'gpu' in index or 'cuda' in index else 'cpu'
 
         # Use double (real+imag channels)
         double = 'double' in index
