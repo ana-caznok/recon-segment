@@ -14,11 +14,11 @@ train:
   batch_size: 20 
   lr: 0.0001  # 1e-4 faster initial lr 
   epochs: 1000 
-  transform_index: null # nnunet transform simply doesnt work 
+  transform_index: 'None' # nnunet transform simply doesnt work 
 
 valid:
   batch_size: 15
-  transform_index: null
+  transform_index: 'None'
 
 nworkers: 25
 
