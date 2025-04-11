@@ -1,0 +1,35 @@
+save_checkpoint_path: 'models/'  # modificado
+
+fixed_checkpoint_name: 'stable_ifft_1000.pth'
+pretrained_path: null
+continue_model_path: null
+resume_wandb_id: 'gluglu'
+
+evaluate_step: 20   # will never happen if higher than dataset size
+save_steps: 20
+
+wandb: True
+
+train:
+  batch_size: 20  
+  lr: 0.0001  # 1e-4 faster initial lr 
+  epochs: 1000 
+  transform_index: "fft_double_normal_none_gpu_shift" # nnunet transform simply doesnt work 
+
+valid:
+  batch_size: 15
+  transform_index: "fft_double_normal_none_gpu_shift"
+
+nworkers: 25
+
+task: 'recon'
+loss: "MSE"  
+model: 'seg-rec_62to122_stable_stabmin' 
+base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
+preprocessing: 'downsampled'
+opt: "AdamW"  # adamW with 1e-5 weight decay
+scheduling: 0.998  # exponential learning rate decay
+ifft: True
+
+# Minimize sam instead of loss
+torchinfo: True
