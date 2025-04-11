@@ -17,7 +17,7 @@ train:
   transform_index: "fft_D40_minmax_gpu_shift" 
 
 valid:
-  batch_size: 15
+  batch_size: 6
   transform_index: "fft_D40_minmax_gpu_shift"
 
 nworkers: 25

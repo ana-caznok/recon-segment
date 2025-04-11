@@ -17,7 +17,7 @@ train:
   transform_index: 'None' # nnunet transform simply doesnt work 
 
 valid:
-  batch_size: 15
+  batch_size: 6
   transform_index: 'None'
 
 nworkers: 25
