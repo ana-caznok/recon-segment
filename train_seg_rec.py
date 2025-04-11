@@ -48,6 +48,7 @@ config_file = args.config.split('/')[-1]
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PREPROCESSING = config['preprocessing']  # or None or "downsampled"
 BATCH_SIZE = config['train']['batch_size']
+VAL_BATCH_SIZE = config['valid']['batch_size']
 NUM_EPOCHS = config['train']['epochs']
 LEARNING_RATE = config['train']['lr']
 TRANSFORM = config['train']['transform_index']
@@ -94,7 +95,7 @@ val_dataset = FixedDataset(
 )
 
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 
 
 # ------------------ MODEL AND OPTIMIZER -------------------------------------------------
