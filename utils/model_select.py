@@ -29,16 +29,27 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
         else: 
             need_ifft = False
         
+        if 'attn' in model_str: 
+            num_heads = int(model_str.split('attn')[1])
+        else: 
+            num_heads = 12
+        
+        if 'patch' in model_str: 
+            patch_size = int(model_str.split('patch')[1])
+        else: 
+            patch_size = 32
+
+        
         if 'stable' in parc_str: 
             if 'stabmin' in parc_str: 
                 xminmax = True 
             else: 
                 xminmax = False
                 
-            model = SegRecon_ViT_3D_StableTrain(C_input=start, total_channels=tot_channels, xminmax=xminmax, ifft=need_ifft)
+            model = SegRecon_ViT_3D_StableTrain(C_input=start, total_channels=tot_channels, patch_size=patch_size, xminmax=xminmax, num_heads=num_heads, ifft=need_ifft)
         
         else: 
-            model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, ifft=need_ifft)
+            model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft)
 
     elif model_str=='restormer': 
          model = Restormer(inp_channels=4,out_channels=61)
