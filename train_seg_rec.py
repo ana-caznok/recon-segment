@@ -102,7 +102,7 @@ val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 
 model, config = model_select(config)
 model = model.to(DEVICE) # Select model and loss function
-criterion = loss_select(config)
+criterion = loss_select(config).to(DEVICE) #new
 
 start_epoch = config.get("start_epoch", 0)
 
