@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=30
 #SBATCH --partition=gpu-v100
 #SBATCH --gres=gpu:1
-#SBATCH --mem=9GB
+#SBATCH --mem=10GB
 #SBATCH --time=0-24:00:00
 #SBATCH --output=stable_1000_xmin_fft2ifft2hsi.out
 # ====================================
