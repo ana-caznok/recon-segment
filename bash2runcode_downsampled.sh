@@ -24,4 +24,4 @@ export DATA_PATH="/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2/downsamp
 
 #python train_seg_rec.py --config configs/stable_fft2ifft2hsi_1000_none_cluster_xmin.yaml
 
-python train_seg_rec.py --config configs/msi2hsi_L1_patch16.yaml
+python train_seg_rec.py --config configs/msi2hsi_mraessimsam_patch64.yaml

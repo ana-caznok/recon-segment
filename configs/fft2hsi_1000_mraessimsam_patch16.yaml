@@ -24,7 +24,7 @@ nworkers: 25
 
 task: 'recon'
 loss: "MRAESSIMSAMLoss"  
-model: 'seg-rec_31to61' 
+model: 'seg-rec_31to61_patch16' 
 base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
 preprocessing: 'downsampled'
 opt: "AdamW"  # adamW with 1e-5 weight decay

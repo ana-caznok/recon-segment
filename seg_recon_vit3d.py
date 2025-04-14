@@ -75,9 +75,14 @@ class Encoder(nn.Module):
 
 # Decoder that upsamples the encoded patch features back to a full-resolution image
 class RecDecoder(nn.Module):
-    def __init__(self, embed_dim, tot_channels, upsampling_channels=[512, 256, 128, 64]):
+    def __init__(self, embed_dim, tot_channels, patch_size = 32,upsampling_channels=[512, 256, 128, 64]):
         super().__init__()
+        #if patch_size !=32: 
+        #    factor = 32/patch_size
+        #    for i in range(len(upsampling_channels)): 
+        #        upsampling_channels[i] = int(upsampling_channels[i]*factor)
 
+        print(upsampling_channels)
         # Define intermediate channel sizes for each transposed conv layer
         channels = [embed_dim] + upsampling_channels
         layers = []
@@ -102,7 +107,10 @@ class RecDecoder(nn.Module):
             kernel_size=3,
             padding=1
         ))
-        layers.append(nn.Upsample(scale_factor=2, mode="bilinear"))
+
+        factor = patch_size//16 #to output the right dimensions
+
+        layers.append(nn.Upsample(scale_factor=factor, mode="bilinear"))
         # New layer that does not change output shape
         layers.append(nn.Conv2d(
             in_channels=tot_channels,
@@ -149,7 +157,8 @@ class SegRecon_ViT_3D(nn.Module):
         self.encoder = Encoder(config,C_input, patch_size, emb_size)
 
         # Decoder to reconstruct full image from patch embeddings
-        self.decoder = RecDecoder(embed_dim=emb_size, tot_channels=total_channels)
+        self.decoder = RecDecoder(embed_dim=emb_size, tot_channels=total_channels, patch_size=patch_size)
+        print(self.decoder)
 
         # Final 1x1 convolution to project to desired channel count
         self.out_conv = nn.Conv2d(

@@ -22,4 +22,4 @@ wandb login
 cd /home/ana.caznoksilveira/recon-segment
 
 
-python train_seg_rec.py --config configs/msi2hsi_1000_mraessimsam.yaml
+python train_seg_rec.py --config configs/msi2hsi_1000_mraessimsam_patch16.yaml
