@@ -77,10 +77,6 @@ class Encoder(nn.Module):
 class RecDecoder(nn.Module):
     def __init__(self, embed_dim, tot_channels, patch_size = 32,upsampling_channels=[512, 256, 128, 64]):
         super().__init__()
-        #if patch_size !=32: 
-        #    factor = 32/patch_size
-        #    for i in range(len(upsampling_channels)): 
-        #        upsampling_channels[i] = int(upsampling_channels[i]*factor)
 
         print(upsampling_channels)
         # Define intermediate channel sizes for each transposed conv layer

@@ -3,6 +3,7 @@ from typing import Dict, Any
 from seg_recon_vit3d import *
 from Restormer import Restormer
 from seg_recon_vit3d_stable import *
+from seg_recon_vit3d_restormer import *
 from utils import *
 import wandb
 from utils.load_ckpt import load_best_ckpt
@@ -47,6 +48,9 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
                 xminmax = False
                 
             model = SegRecon_ViT_3D_StableTrain(C_input=start, total_channels=tot_channels, patch_size=patch_size, xminmax=xminmax, num_heads=num_heads, ifft=need_ifft)
+        
+        elif 'rest' in parc_str: 
+            model = SegRecon_ViT_3D_Rest(C_input=start, total_channels=tot_channels, patch_size=16, num_heads=12, ifft=need_ifft)
         
         else: 
             model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft)
