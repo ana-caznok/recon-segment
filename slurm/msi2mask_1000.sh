@@ -22,4 +22,4 @@ wandb login
 cd /home/ana.caznoksilveira/recon-segment
 
 
-python train_seg_rec.py --config configs/msi2mask_wsam_1000.yaml
+python train_seg_rec_dualtask.py --config configs/msi2mask_wsam_1000.yaml
