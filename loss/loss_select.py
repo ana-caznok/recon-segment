@@ -28,6 +28,8 @@ def loss_select(configs: Dict[str, Any]) -> object:
         return SpectralAngleMapper(compute_with_cache=False)
     elif index == "MRAESSIMSAMLoss":
         return MRAESSIMSAMLoss()
+    elif index == "MRAESSIMSAMLoss_W":
+        return MRAESSIMSAMLoss(weighted_sam=True)
     elif index == "SSIMSAMLoss":
         return MRAESSIMSAMLoss(enable_mrae=False)
     elif index == "MRAESAMLoss":

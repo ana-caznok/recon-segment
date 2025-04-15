@@ -5,11 +5,12 @@ from torchmetrics.image import SpectralAngleMapper, StructuralSimilarityIndexMea
 
 
 class MRAESSIMSAMLoss(nn.Module):
-    def __init__(self, enable_mrae=True, enable_sam=True, enable_ssim=True):
+    def __init__(self, enable_mrae=True, enable_sam=True, enable_ssim=True, weighted_sam = False):
         super().__init__()
         self.enable_mrae = enable_mrae
         self.enable_sam = enable_sam
         self.enable_ssim = enable_ssim
+        self.weighted_sam = weighted_sam
         
         assert int(enable_mrae) + int(enable_sam) + int(enable_ssim) > 0, "Please enable some loss"
         
@@ -26,7 +27,11 @@ class MRAESSIMSAMLoss(nn.Module):
             loss += self.mrae(pred, target)
         
         if self.enable_sam:
-            loss += self.sam(pred, target)
+            if self.weighted_sam: 
+                w = 2
+            else: 
+                w = 1
+            loss += w*self.sam(pred, target)
         
         if self.enable_ssim:
             loss += (1 - self.ssim(pred, target))
