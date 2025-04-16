@@ -31,7 +31,7 @@ preprocessing: 'downsampled'
 opt: "AdamW"  # adamW with 1e-5 weight decay
 scheduling: 0.998  # exponential learning rate decay
 ifft: False
-include_background: False
+include_background: True
 
 # Minimize sam instead of loss
 torchinfo: True

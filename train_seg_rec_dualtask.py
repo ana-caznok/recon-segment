@@ -59,6 +59,7 @@ fixed_checkpoint_name = config["fixed_checkpoint_name"]
 SAVE_STEPS = int(config['save_steps'])
 need_ifft = bool(config['ifft'])
 transform2metrics = bool(config['transform2metrics']) if 'transform2metrics' in config else False
+include_background = bool(config['include_background']) if 'include_background' in config else False
 
 
 try:
@@ -105,7 +106,7 @@ val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 model, config = model_select(config)
 model = model.to(DEVICE) # Select model and loss function
 criterion = loss_select(config).to(DEVICE) #new
-criterion_seg = DiceLoss(include_background=True,to_onehot_y=False)
+criterion_seg = DiceLoss(include_background=include_background,to_onehot_y=False)
 
 start_epoch = config.get("start_epoch", 0)
 
@@ -177,7 +178,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
     i = 0
     ssim_function = StructuralSimilarityIndexMeasure().to('cpu')
     sam_function = SAMScore().to('cpu')
-    dice_metric = DiceMetric(include_background=True, reduction="mean", get_not_nans=False) #.to(DEVICE)
+    dice_metric = DiceMetric(include_background=include_background, reduction="mean", get_not_nans=False) #.to(DEVICE)
     ssim = 0
     sam = 0
     dice =0
@@ -223,8 +224,8 @@ for epoch in range(start_epoch,NUM_EPOCHS):
     avg_sam = sam/len(val_loader)
     avg_dice = dice_metric.aggregate().item()
     dice_metric.reset()
-    print(avg_sam)
-    print(avg_dice)
+    #print(avg_sam)
+    #print(avg_dice)
 
     if config['wandb']:
         wandb.log({f"Validation Avg Loss {config['loss']}": avg_val_loss})
