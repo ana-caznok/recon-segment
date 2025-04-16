@@ -14,6 +14,7 @@
 
 source ~/software/init-conda
 conda activate agrvai
+pip install monai
 export CODE_PATH="/home/ana.caznoksilveira/recon-segment"
 export DATA_PATH="/home/ana.caznoksilveira/icasp/icasp/data/Link_2/downsampled"
 export WANDB_API_KEY=91726ad327981a84eb14736bd7e3800221958491

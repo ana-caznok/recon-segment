@@ -31,6 +31,7 @@ from metrics.sam import SAMScore
 from transforms.ifft_transform import InverseFourierSpectralTransform
 from transforms.inverse_factory import inverse_transform_factory
 from monai.losses.dice import DiceLoss
+from monai.metrics.meandice import DiceMetric
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Train 3D ViT model using YAML config.")
@@ -104,7 +105,7 @@ val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 model, config = model_select(config)
 model = model.to(DEVICE) # Select model and loss function
 criterion = loss_select(config).to(DEVICE) #new
-criterion_seg = DiceLoss(include_background=False,to_onehot_y=False)
+criterion_seg = DiceLoss(include_background=True,to_onehot_y=False)
 
 start_epoch = config.get("start_epoch", 0)
 
@@ -154,7 +155,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
             output = ifft_output_function(output, meta)
 
         loss_rec = criterion(output, y)
-        loss_seg = (1 - criterion_seg(mask, meta['mask'].to(DEVICE)))
+        loss_seg = criterion_seg(mask, meta['mask'].to(DEVICE))
         loss = loss_rec + loss_seg
         loss.backward()
         optimizer.step()
@@ -176,6 +177,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
     i = 0
     ssim_function = StructuralSimilarityIndexMeasure().to('cpu')
     sam_function = SAMScore().to('cpu')
+    dice_metric = DiceMetric(include_background=True, reduction="mean", get_not_nans=False) #.to(DEVICE)
     ssim = 0
     sam = 0
     dice =0
@@ -189,7 +191,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
                 output = ifft_output_function(output,meta)
                 
             loss_rec = criterion(output, y)
-            loss_seg = (1 - criterion_seg(mask, meta['mask'].to(DEVICE)))
+            loss_seg = criterion_seg(mask, meta['mask'].to(DEVICE))
             loss = loss_rec + loss_seg
             val_loss += loss.item()
             i += 1
@@ -201,14 +203,28 @@ for epoch in range(start_epoch,NUM_EPOCHS):
 
             ssim += ssim_function(output.cpu(),y.cpu())
             sam += sam_function(output.cpu(),y.cpu())
-            dice += criterion_seg(mask,meta['mask'].to(DEVICE))
+            
+            # Binarize prediction mask with threshold (e.g., 0.5)
+            pred_mask = (mask > 0.5).float()
+
+            # Ensure both pred_mask and target_mask have shape (B, 1, D, H, W)
+            if pred_mask.ndim == 4:
+                pred_mask = pred_mask.unsqueeze(1)
+            if meta['mask'].ndim == 4:
+                target_mask = meta['mask'].unsqueeze(1)
+
+            # Accumulate dice metric inputs
+            dice_metric(pred_mask, target_mask.to(DEVICE))
 
     avg_val_loss = val_loss / len(val_loader)
     val_history.append(avg_val_loss)
     
     avg_ssim = ssim/len(val_loader)
     avg_sam = sam/len(val_loader)
-    avg_dice = dice/len(val_loader)
+    avg_dice = dice_metric.aggregate().item()
+    dice_metric.reset()
+    print(avg_sam)
+    print(avg_dice)
 
     if config['wandb']:
         wandb.log({f"Validation Avg Loss {config['loss']}": avg_val_loss})
