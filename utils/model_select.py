@@ -8,6 +8,7 @@ from seg_recon_vit3d_dualtask import *
 from utils import *
 import wandb
 from utils.load_ckpt import load_best_ckpt
+from seg_recon_vit3d_overlap import *
 
 
 def model_select(configs: Dict[str, Any]) -> nn.Module:
@@ -55,7 +56,8 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
         
         elif 'dual-task' in parc_str: 
             model = SegRecon_ViT_3D_DualTask(C_input=start, total_channels=tot_channels, patch_size=16, num_heads=12, ifft=need_ifft)
-        
+        elif 'overlap' in parc_str: 
+            model = SegRecon_ViT_3D_Overlap(C_input=start, total_channels=tot_channels, patch_size=32, num_heads=12, ifft=need_ifft,overlap=True)
         else: 
             model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft)
 
