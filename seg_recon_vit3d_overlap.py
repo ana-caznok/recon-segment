@@ -104,7 +104,7 @@ class RecDecoder(nn.Module):
 
 # Main Vision Transformer-based segmentation/reconstruction model
 class SegRecon_ViT_3D_Overlap(nn.Module):
-    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12, ifft=False, overlap=False):
+    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12, ifft=False, overlap=False, nconv = 1):
         super().__init__()
 
         self.total_channels = total_channels
@@ -114,6 +114,7 @@ class SegRecon_ViT_3D_Overlap(nn.Module):
         self.patch_size = patch_size
         self.ifft = ifft
         self.overlap = overlap
+        self.nconv = nconv
 
         config = VitAttentionConfig(
             attention_dropout=0.0,
@@ -143,7 +144,12 @@ class SegRecon_ViT_3D_Overlap(nn.Module):
 
         x, h, w = self.encoder(x_input)
         x = self.decoder(x, h, w)
-        x = self.out_conv(x)
+        if self.nconv ==1: 
+            x = self.out_conv(x)
+            
+        else: 
+            for i in range(self.nconv): 
+                x = self.out_conv(x)
 
         if not self.ifft:
             x = torch.clip(x, 0, 1)

@@ -42,6 +42,11 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
         else: 
             patch_size = 32
 
+        if 'nconv' in model_str: 
+            nconv = int(model_str.split('nconv')[1])
+        else: 
+            nconv=1
+
         
         if 'stable' in parc_str: 
             if 'stabmin' in parc_str: 
@@ -56,8 +61,10 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
         
         elif 'dual-task' in parc_str: 
             model = SegRecon_ViT_3D_DualTask(C_input=start, total_channels=tot_channels, patch_size=16, num_heads=12, ifft=need_ifft)
+
         elif 'overlap' in parc_str: 
-            model = SegRecon_ViT_3D_Overlap(C_input=start, total_channels=tot_channels, patch_size=32, num_heads=12, ifft=need_ifft,overlap=True)
+            model = SegRecon_ViT_3D_Overlap(C_input=start, total_channels=tot_channels, patch_size=32, num_heads=12, ifft=need_ifft,overlap=True, nconv=nconv)
+
         else: 
             model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft)
 

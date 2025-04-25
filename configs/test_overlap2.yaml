@@ -11,7 +11,7 @@ save_steps: 20
 wandb: True
 
 train:
-  batch_size: 4  
+  batch_size: 6  
   lr: 0.0001  # 1e-4 faster initial lr 
   epochs: 50 
   transform_index: "None" # nnunet transform simply doesnt work 
@@ -23,7 +23,7 @@ valid:
 nworkers: 6
 
 task: 'recon'
-loss: "MSE"  
+loss: "L1Loss"  
 model: 'seg-rec_4to61_overlap' 
 base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
 preprocessing: "downsampled"
