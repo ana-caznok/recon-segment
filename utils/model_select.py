@@ -10,6 +10,7 @@ import wandb
 from utils.load_ckpt import load_best_ckpt
 from seg_recon_vit3d_overlap import *
 from HSCNN_Plus import *
+from Restormer_Seg import *
 
 
 def model_select(configs: Dict[str, Any]) -> nn.Module:
@@ -77,7 +78,10 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
             model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft, feedfoward=ff)
 
     elif 'restormer' in model_str: 
-         model = Restormer(inp_channels=start,out_channels=tot_channels)
+        if 'seg' in model_str: 
+            model = Restormer_Seg(inp_channels=start,out_channels=tot_channels)
+        else:
+            model = Restormer(inp_channels=start,out_channels=tot_channels)
 
     elif 'hscnn' in model_str: 
         model = HSCNN_Plus(in_channels=start, out_channels=tot_channels)
