@@ -1,17 +1,18 @@
+# Ignorar outputs de treinamento e arquivos pesados
 notebooks/wandb/*
 wandb*
-models/*pth
-__pycache__/*
-*pyc
+models/*.pth
+plots/*
+slurm/*.out
+*.out
+
+# Ignorar arquivos temporários e caches
 *.pyc
 *.h5
 *.pth
 *.tiff
-__pycache__/*.pyc
-*.pyc
 *.png
-plots/*
-transforms/__pycache__/*
-utils/__pycache__/*
-slurm/*.out
-*.out
+
+# Ignorar qualquer pasta __pycache__ em qualquer lugar
+__pycache__/
+**/__pycache__/
