@@ -28,6 +28,6 @@ export DATA_PATH="/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2/downsamp
 
 #python train_seg_rec.py --config configs/test_segrec_rest2.yaml
 #python train_seg_rec.py --config configs/test_overlap2.yaml
-python train_seg_rec.py --config configs/test_feedfoward2.yaml
+python train_seg_rec.py --config configs/restormer_msi2hsi_mraessimsam.yaml
 
 
