@@ -9,6 +9,7 @@ from utils import *
 import wandb
 from utils.load_ckpt import load_best_ckpt
 from seg_recon_vit3d_overlap import *
+from HSCNN_Plus import *
 
 
 def model_select(configs: Dict[str, Any]) -> nn.Module:
@@ -19,13 +20,16 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
     '''
     model_str = configs.get("model")
     parc_str = model_str.split('_')
-     
-    
-    if 'seg-rec' in parc_str: 
-       
+
+    if 'to' in model_str:
         fromto = parc_str[1].split('to')
         start = int(fromto[0])
         tot_channels = int(fromto[1])
+    else: 
+        start = 4
+        tot_channels = 61
+    
+    if 'seg-rec' in parc_str: 
 
         if 'ifft' in model_str: 
             need_ifft = True
@@ -47,7 +51,11 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
         else: 
             nconv=1
 
-        
+        if 'feedfoward' in model_str: 
+            ff = True
+        else: 
+            ff=False
+
         if 'stable' in parc_str: 
             if 'stabmin' in parc_str: 
                 xminmax = True 
@@ -66,11 +74,13 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
             model = SegRecon_ViT_3D_Overlap(C_input=start, total_channels=tot_channels, patch_size=32, num_heads=12, ifft=need_ifft,overlap=True, nconv=nconv)
 
         else: 
-            model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft)
+            model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft, feedfoward=ff)
 
-    elif model_str=='restormer': 
-         model = Restormer(inp_channels=4,out_channels=61)
-    
+    elif 'restormer' in model_str: 
+         model = Restormer(inp_channels=start,out_channels=tot_channels)
+
+    elif 'hscnn' in model_str: 
+        model = HSCNN_Plus(in_channels=start, out_channels=tot_channels)
     try:
         model, resume_file, best_loss = load_best_ckpt(model, configs, exact_only=True)
         checkpoint = torch.load(resume_file, map_location='cpu')

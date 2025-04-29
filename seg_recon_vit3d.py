@@ -15,6 +15,29 @@ class DownsampleBatch():
     def __str__(self) -> str:
         return f"Downsample by a factor of {self.factor}, assuming 4D batch input"
 
+class FeedForward(nn.Module):
+    def __init__(self, dim, hidden_dim, dropout = 0.):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+    
+class Nothing(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x
+
+
 # Embedding module that splits the input image into patches and embeds them
 class Embedd(nn.Module):
     def __init__(self, in_channel=31, patch_size=32, embed_dim=768):
@@ -58,17 +81,26 @@ class Embedd(nn.Module):
     
 
 class Encoder(nn.Module): 
-    def __init__(self, config, in_channel=31, patch_size=32, embed_dim=768):
+    def __init__(self, config, in_channel=31, patch_size=32, embed_dim=768, feedfoward=False):
         super().__init__()
         self.embedding_function = Embedd(in_channel, patch_size, embed_dim) 
         self.attention = ViT_Attention(config)
+        self.norm = nn.LayerNorm(embed_dim)
+
+        if feedfoward: 
+            self.feedfoward = FeedForward(embed_dim, embed_dim, dropout = 0)
+        else: 
+            self.feedfoward = Nothing()
 
     def forward(self, tensor: torch.Tensor):
 
         # Embed patches with position encoding
         embeddings, h, w = self.embedding_function(tensor)  # (B, T, E), h*w = T
         # Apply self-attention on the patches
-        x = self.attention(embeddings)  # (B, T, E)
+        x = self.attention(embeddings)  # (B, T, E) -> provavelmente esta faltando uma camada feed foward
+        x = self.feedfoward(x) + x
+        #x = self.norm(x)
+
         return x, h, w
 
         
@@ -131,7 +163,7 @@ class RecDecoder(nn.Module):
 
 # Main Vision Transformer-based segmentation/reconstruction model
 class SegRecon_ViT_3D(nn.Module):
-    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12,ifft=False):
+    def __init__(self, C_input=31, total_channels=61, patch_size=32, emb_size=768, num_heads=12,ifft=False, feedfoward=False):
         super().__init__()
 
         # Store model configuration
@@ -141,6 +173,7 @@ class SegRecon_ViT_3D(nn.Module):
         self.num_heads = num_heads
         self.patch_size = patch_size
         self.ifft = ifft
+        self.feedfoward = feedfoward
 
         # Attention configuration for the transformer block
         config = VitAttentionConfig(
@@ -150,7 +183,7 @@ class SegRecon_ViT_3D(nn.Module):
 
         # Vision Transformer attention block
         # Encoder = embedding + attention, embedding inputs B,C,Y,X and outputs (B, T, E), H, W, with h*w = T, attention inputs (B, T, E) and outputs B, T, E
-        self.encoder = Encoder(config,C_input, patch_size, emb_size)
+        self.encoder = Encoder(config,C_input, patch_size, emb_size,feedfoward)
 
         # Decoder to reconstruct full image from patch embeddings
         self.decoder = RecDecoder(embed_dim=emb_size, tot_channels=total_channels, patch_size=patch_size)
