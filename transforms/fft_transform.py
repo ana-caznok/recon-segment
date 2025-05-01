@@ -4,7 +4,7 @@ from typing import Tuple, Dict, Any
 
 
 def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str = 'cpu', channel_first = True, shift = True, 
-                               stack_tipe='None', invert = False, return_numpy=False) -> torch.Tensor:
+                               stack_tipe='None', invert = False, return_numpy=False, e = 0) -> torch.Tensor:
     """
     Apply a 1D Fourier Transform along the spectral (channel) dimension of a hyperspectral image.
     
@@ -47,10 +47,10 @@ def fourier_transform_spectral(img: np.ndarray, norm: str = 'abs', device: str =
         else: 
             fft_result = fft_result.numpy()
 
-    return fft_result, min_vals, max_vals
+    return fft_result + e, min_vals, max_vals
 
 def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'cpu', channel_first: bool = True, 
-                         shift = True, stack_type='alternate', invert=False, return_numpy=False) -> np.ndarray:
+                         shift = True, stack_type='alternate', invert=False, return_numpy=False, e=0) -> np.ndarray:
     """
     Apply FFT along the spectral dimension and return a normalized, interleaved real+imag output.
     Output shape will have 2x channels. Even = real, Odd = imag. Values in [0.0001, 1].
@@ -130,7 +130,7 @@ def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'c
             interleaved = interleaved.numpy()
 
     # Return the result as a NumPy array on CPU
-    return interleaved, t_min, t_max
+    return interleaved + e, t_min, t_max
 
 
 class FourierSpectralTransform:

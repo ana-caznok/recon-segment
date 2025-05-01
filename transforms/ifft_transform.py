@@ -7,12 +7,13 @@ def inverse_fft_from_real_imag(
     device: str = 'cpu',
     channel_first: bool = True,
     shift: bool = True,
-    stack_type: str = 'alternate'
-     ) -> torch.Tensor:
+    stack_type: str = 'alternate', 
+    e=0) -> torch.Tensor:
     """
     Vectorized inverse FFT with per-sample normalization support.
     """
     x_tensor = y_transformed.to(device)  # (B, 2C, H, W)
+    x_tensor = x_tensor - e
 
     if norm == 'minmax':
         if meta['fft_ymin'].dim() < 4:
