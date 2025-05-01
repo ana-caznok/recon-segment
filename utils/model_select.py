@@ -11,6 +11,7 @@ from utils.load_ckpt import load_best_ckpt
 from seg_recon_vit3d_overlap import *
 from HSCNN_Plus import *
 from Restormer_Seg import *
+from seg_recon_vit3d_2 import *
 
 
 def model_select(configs: Dict[str, Any]) -> nn.Module:
@@ -73,6 +74,9 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
 
         elif 'overlap' in parc_str: 
             model = SegRecon_ViT_3D_Overlap(C_input=start, total_channels=tot_channels, patch_size=32, num_heads=12, ifft=need_ifft,overlap=True, nconv=nconv)
+        
+        elif 'vit' in parc_str: 
+            model = SegRecon_ViT_3D_2(C_input=start, total_channels=tot_channels, patch_size=patch_size, num_heads=12)
 
         else: 
             model = SegRecon_ViT_3D(C_input=start, total_channels=tot_channels, patch_size=patch_size ,num_heads=num_heads, ifft=need_ifft, feedfoward=ff)

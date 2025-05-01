@@ -46,7 +46,7 @@ class Embedd(nn.Module):
         self.embed_dim = embed_dim                  # Embedding dimension for each patch
         self.patch_size = patch_size                # Size of each patch
 
-        # Convolution to split the image into non-overlapping patches and embed them
+        # Convolution to split the image into non-overlapping patches and embed them -> maybe no convolution would help 
         self.patch_embedding_func = nn.Conv2d(
             in_channels=self.in_channel,
             out_channels=self.embed_dim,
@@ -63,7 +63,7 @@ class Embedd(nn.Module):
         # Apply patch embedding via Conv2D -> shape: (B, embed_dim, H', W')
         patches = self.patch_embedding_func(tensor)
         B, C, H, W = patches.shape
-        num_patches = H * W
+        num_patches = H * W 
 
         # Flatten to (B, T, E) where T = H' * W'
         patches = patches.flatten(2).transpose(1, 2)
