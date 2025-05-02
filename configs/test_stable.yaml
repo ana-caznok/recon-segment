@@ -14,11 +14,11 @@ train:
   batch_size: 4  
   lr: 0.0001  # 1e-4 faster initial lr 
   epochs: 50 
-  transform_index: "downs4_fft_double_normal_none_cpu_shift" # nnunet transform simply doesnt work 
+  transform_index: "downs4_fft_double_normal_minmax-byc_cpu_shift" # nnunet transform simply doesnt work 
 
 valid:
   batch_size: 2
-  transform_index: "downs4_fft_double_normal_none_cpu_shift"
+  transform_index: "downs4_fft_double_normal_minmax-byc_cpu_shift"
 
 nworkers: 6
 

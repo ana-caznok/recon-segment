@@ -29,6 +29,15 @@ def inverse_fft_from_real_imag(
         # Ensure broadcast shape matches x_tensor: (B, 2C, H, W)
         x_tensor = (x_tensor - 0.0001) / (1 - 0.0001)
         x_tensor = x_tensor * (y_max - y_min + 1e-8) + y_min
+    
+    elif norm =='minmax-byc': 
+        y_min = meta['fft_ymin'].to(device)
+        y_max = meta['fft_ymax'].to(device)  
+
+        # Ensure broadcast shape matches x_tensor: (B, 2C, H, W)
+        x_tensor = (x_tensor - 0.0001) / (1 - 0.0001)
+        x_tensor = x_tensor * (y_max - y_min + 1e-8) + y_min
+
 
     elif norm == 'softmax':
         raise NotImplementedError("Softmax normalization is not invertible without the original unnormalized input.")

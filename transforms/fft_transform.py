@@ -80,12 +80,14 @@ def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'c
     imag = fft_result.imag
 
     # Define a function to normalize values to the range [0.0001, 1]
-    def normalize_minmax(t):
+    def normalize_minmax(t, by_c=False):
         # Compute per-spectrum minimum and maximum along the spectral axis
-        #t_min = t.amin(dim=dim, keepdim=True)
-        #t_max = t.amax(dim=dim, keepdim=True)
+        if by_c: 
+            t_min = t.amin(dim=dim, keepdim=True)
+            t_max = t.amax(dim=dim, keepdim=True)
         # Compute per-spectrum minimum and maximum along the whole image
-        t_min, t_max = torch.min(t), torch.max(t)
+        else: 
+            t_min, t_max = torch.min(t), torch.max(t)
         
         # Normalize to [0, 1], avoiding divide-by-zero with small epsilon
         normed = (t - t_min) / (t_max - t_min + 1e-8)
@@ -115,6 +117,8 @@ def fft_real_imag_double(img: np.ndarray, norm: str = 'minmax', device: str = 'c
 
     if norm == 'minmax': 
         interleaved, t_min, t_max = normalize_minmax(interleaved)
+    if norm == 'minmax-byc': 
+        interleaved, t_min, t_max = normalize_minmax(interleaved, by_c=True)
     if norm == 'softmax': 
         interleaved, t_min, t_max = softmax_normalize(interleaved)
     if norm == 'None': 

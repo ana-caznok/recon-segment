@@ -134,6 +134,8 @@ def transform_factory(index: str):
         # Choose normalization method
         if 'minmax' in index:
             fft_norm = 'minmax'
+            if 'byc' in index:
+                fft_norm = fft_norm + '-byc' 
         elif 'softmax' in index:
             fft_norm = 'softmax'
         elif 'none' in index:
