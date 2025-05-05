@@ -218,15 +218,19 @@ for epoch in range(start_epoch,NUM_EPOCHS):
             sam += sam_function(output.cpu(),y.cpu())
 
             # Accumulate dice metric inputs
-            dice_metric(mask, meta['mask'].to(DEVICE))
+            my_dice = dice_metric(mask, meta['mask'].to(DEVICE))
+            if len(dice)>1: 
+                dice = dice.mean()
+            else: 
+                dice += my_dice
 
     avg_val_loss = val_loss / len(val_loader)
     val_history.append(avg_val_loss)
 
     avg_ssim = ssim/len(val_loader)
     avg_sam = sam/len(val_loader)
-    avg_dice = dice_metric.aggregate().item()
-    dice_metric.reset()
+    avg_dice = dice/len(val_loader)
+    #dice_metric.reset()
  
     if config['wandb']:
         wandb.log({f"Validation Avg Loss {config['loss']}": avg_val_loss})
