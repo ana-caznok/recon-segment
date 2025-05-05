@@ -135,7 +135,9 @@ def transform_factory(index: str):
         if 'minmax' in index:
             fft_norm = 'minmax'
             if 'byc' in index:
-                fft_norm = fft_norm + '-byc' 
+                fft_norm = fft_norm + '-byc' #by channel is actually by pixel, by spectral 
+            if 'byimg' in index:
+                fft_norm = fft_norm + '-byimg' #by channel is actually by channel, by img channel
         elif 'softmax' in index:
             fft_norm = 'softmax'
         elif 'none' in index:
