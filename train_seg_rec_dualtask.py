@@ -46,7 +46,8 @@ config = read_yaml(args.config)
 config_file = args.config.split('/')[-1]
 
 
-# --------------------- CONFIG -----------------------------------------------
+# ------------------------------------------ CONFIG -------------------------------------------------------------
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PREPROCESSING = config['preprocessing']  # or None or "downsampled"
 BATCH_SIZE = config['train']['batch_size']
@@ -82,7 +83,7 @@ if transform2metrics:
 
 
 
-# ------------------ DATASET + LOADER -----------------------------------------
+# ---------------------------------------------- DATASET + LOADER -------------------------------------------------
 train_dataset = FixedDataset(
     mode="train",
     base_path=BASE_PATH,
@@ -101,7 +102,7 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 
 
-# ------------------ MODEL AND OPTIMIZER -------------------------------------------------
+# --------------------------------------------- MODEL AND OPTIMIZER -------------------------------------------------
 
 model, config = model_select(config)
 model = model.to(DEVICE) # Select model and loss function
@@ -119,7 +120,7 @@ if config.get("scheduler", False):
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
 
-# ------------------ INITIALIZING WANDB ---------------------------------------------------
+# -------------------------------------------- INITIALIZING WANDB ---------------------------------------------------
 
 name = os.path.basename(config_file).replace(".yaml", '')
 
@@ -138,7 +139,8 @@ if 'wandb_id' not in config.keys():
     artifact.add_file(os.path.join(wandb.run.dir, 'config.yaml'))
     run.log_artifact(artifact)
 
-# ------------------ TRAIN LOOP -----------------------------------------------------------
+# ---------------------------------------------- TRAIN LOOP -----------------------------------------------------------
+
 trn_history = []
 val_history = []
 for epoch in range(start_epoch,NUM_EPOCHS):
@@ -172,7 +174,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         wandb.log({"epoch": epoch})
         
 
-    # ------------------ EVAL LOOP --------------------------------------------------------
+    # ---------------------------------------------- EVAL LOOP --------------------------------------------------------
     model.eval()
     val_loss = 0.0
     i = 0
@@ -251,7 +253,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
 
 wandb.log({"final_SSIM": avg_ssim})
 wandb.log({"final_SAM": avg_sam})
-# ------------------ SAVE MODEL -------------------------------------------------------------------------------
+# ------------------ SAVE MODEL -------------------------------------------------------------------------------------------------------------
 save_checkpoint(model,SAVE_PATH + fixed_checkpoint_name + '.pth', epoch, i, optimizer, avg_val_loss, disable= False, wandb_id= wandb.run.id)
 print(f"Final Model saved to {SAVE_PATH}")
 
