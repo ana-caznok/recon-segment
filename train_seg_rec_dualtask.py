@@ -32,7 +32,8 @@ from transforms.ifft_transform import InverseFourierSpectralTransform
 from transforms.inverse_factory import inverse_transform_factory
 from monai.losses.dice import DiceLoss
 from monai.metrics.meandice import DiceMetric
-
+from monai.metrics import generalized_dice, GeneralizedDiceScore
+import torch.nn.functional as F
 # Argument parser
 parser = argparse.ArgumentParser(description="Train 3D ViT model using YAML config.")
 parser.add_argument('--config', type=str, required=True, help="Path to the YAML configuration file")
@@ -107,7 +108,7 @@ val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 model, config = model_select(config)
 model = model.to(DEVICE) # Select model and loss function
 criterion = loss_select(config).to(DEVICE) #new
-criterion_seg = DiceLoss(include_background=include_background,to_onehot_y=False)
+criterion_seg = DiceLoss(include_background=include_background,to_onehot_y=False) #0 when good, 1 when bad
 
 start_epoch = config.get("start_epoch", 0)
 
@@ -143,6 +144,7 @@ if 'wandb_id' not in config.keys():
 
 trn_history = []
 val_history = []
+
 for epoch in range(start_epoch,NUM_EPOCHS):
     model.train()
     train_loss = 0.0
@@ -150,9 +152,12 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         
         x = x.to(DEVICE)
         y = y.to(DEVICE)
-
         optimizer.zero_grad()
-        output, mask = model(x)
+
+        output, out_prob = model(x)
+        
+        out_prob = torch.sigmoid(out_prob) #activating probabilities, will need to change if more then one class
+        mask = (out_prob > 0.5).float() #turning probabilities into binary mask 
 
         if need_ifft:
             output = ifft_output_function(output, meta)
@@ -174,13 +179,13 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         wandb.log({"epoch": epoch})
         
 
-    # ---------------------------------------------- EVAL LOOP --------------------------------------------------------
+ # ---------------------------------------------- EVAL LOOP --------------------------------------------------------
     model.eval()
     val_loss = 0.0
     i = 0
     ssim_function = StructuralSimilarityIndexMeasure().to('cpu')
     sam_function = SAMScore().to('cpu')
-    dice_metric = DiceMetric(include_background=include_background, reduction="mean", get_not_nans=False) #.to(DEVICE)
+    dice_metric = GeneralizedDiceScore(include_background=True, weight_type='square') #1 when good, 0 when bad
     ssim = 0
     sam = 0
     dice =0
@@ -189,7 +194,12 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         for x, y, meta in tqdm(val_loader, desc="Validation"):
             x = x.to(DEVICE)
             y = y.to(DEVICE)
-            output,mask = model(x)
+
+            output,out_prob = model(x)
+
+            out_prob = torch.sigmoid(out_prob) #will need to change if more then one class
+            mask = (out_prob > 0.5).float()
+            
             if need_ifft: 
                 output = ifft_output_function(output,meta)
                 
@@ -206,29 +216,18 @@ for epoch in range(start_epoch,NUM_EPOCHS):
 
             ssim += ssim_function(output.cpu(),y.cpu())
             sam += sam_function(output.cpu(),y.cpu())
-            
-            # Binarize prediction mask with threshold (e.g., 0.5)
-            pred_mask = (mask > 0.5).float()
-
-            # Ensure both pred_mask and target_mask have shape (B, 1, D, H, W)
-            if pred_mask.ndim == 4:
-                pred_mask = pred_mask.unsqueeze(1)
-            if meta['mask'].ndim == 4:
-                target_mask = meta['mask'].unsqueeze(1)
 
             # Accumulate dice metric inputs
-            dice_metric(pred_mask, target_mask.to(DEVICE))
+            dice_metric(mask, meta['mask'].to(DEVICE))
 
     avg_val_loss = val_loss / len(val_loader)
     val_history.append(avg_val_loss)
-    
+
     avg_ssim = ssim/len(val_loader)
     avg_sam = sam/len(val_loader)
     avg_dice = dice_metric.aggregate().item()
     dice_metric.reset()
-    #print(avg_sam)
-    #print(avg_dice)
-
+ 
     if config['wandb']:
         wandb.log({f"Validation Avg Loss {config['loss']}": avg_val_loss})
         wandb.log({"val_epoch": epoch})

@@ -31,7 +31,7 @@ def inverse_transform_factory(index: str,
 
     if output == True:
         my_norm = 'None'
-    elif 'minmax' in index: 
+    if 'minmax' in index: 
         my_norm = 'minmax'
     else: 
         my_norm = 'None'
