@@ -11,6 +11,7 @@ from utils.load_ckpt import load_best_ckpt
 from seg_recon_vit3d_overlap import *
 from HSCNN_Plus import *
 from Restormer_Seg import *
+from monai.networks.nets import UNet
 
 
 def model_select(configs: Dict[str, Any]) -> nn.Module:
@@ -85,6 +86,38 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
 
     elif 'hscnn' in model_str: 
         model = HSCNN_Plus(in_channels=start, out_channels=tot_channels)
+
+    elif 'monai-unet' in model_str:
+
+        # Extract UNet-specific configs with defaults
+        spatial_dims = configs.get("spatial_dims", 2)
+        channels = configs.get("channels", [16, 32, 64, 128])
+        strides = configs.get("strides", [2, 2, 2])
+        kernel_size = configs.get("kernel_size", 3)
+        up_kernel_size = configs.get("up_kernel_size", 3)
+        num_res_units = configs.get("num_res_units", 2)
+        act = configs.get("act", "PRELU")
+        norm = configs.get("norm", "INSTANCE")
+        dropout = configs.get("dropout", 0.0)
+        bias = configs.get("bias", True)
+        adn_ordering = configs.get("adn_ordering", "NDA")
+
+        # Instantiate MONAI UNet
+        model = UNet(
+            spatial_dims=spatial_dims,
+            in_channels=start,
+            out_channels=tot_channels,
+            channels=channels,
+            strides=strides,
+            kernel_size=kernel_size,
+            up_kernel_size=up_kernel_size,
+            num_res_units=num_res_units,
+            act=act,
+            norm=norm,
+            dropout=dropout,
+            bias=bias,
+            adn_ordering=adn_ordering
+        )
     try:
         model, resume_file, best_loss = load_best_ckpt(model, configs, exact_only=True)
         checkpoint = torch.load(resume_file, map_location='cpu')

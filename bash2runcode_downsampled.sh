@@ -37,4 +37,5 @@ export DATA_PATH="/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2/downsamp
 #python train_seg_rec.py --config configs/restormer_fft2ifft2hsi_byc_continuous.yaml
 #python train_seg_rec.py --config configs/restormer_fft2ifft2hsi_noclip.yaml
 #python train_seg_rec.py --config configs/restormer_fft2ifft2hsi_noclip_byc.yaml
-python train_seg_rec.py --config configs/restormer_fft2ifft2hsi_noclip_byimg.yaml
+#python train_seg_rec.py --config configs/restormer_fft2ifft2hsi_noclip_byimg.yaml
+python train_seg_rec.py --config configs/unet_msi2hsi.yaml
