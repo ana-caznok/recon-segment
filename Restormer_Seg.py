@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numbers
 from einops import rearrange
+from My_Seg_Decoder import *
 
 
 ##########################################################################
@@ -327,18 +328,23 @@ class Restormer_Seg(nn.Module):
                  ffn_expansion_factor=2.66,
                  bias=False,
                  LayerNorm_type='WithBias',  # Other option 'BiasFree'
-                 num_classes=1):
+                 num_classes=1,
+                 my_seg_decoder = 'simple'):
         super(Restormer_Seg, self).__init__()
 
         # Encoder and Decoder are separately modularized
         self.encoder = Encoder(inp_channels, dim, ffn_expansion_factor, heads, bias, LayerNorm_type, num_blocks)
         self.rec_decoder = RecDecoder(dim, ffn_expansion_factor, heads, bias, LayerNorm_type, num_blocks, num_refinement_blocks)
+        self.my_seg_decoder = my_seg_decoder
 
         # Final output convolution layer
         self.output = nn.Conv2d(int(dim * 2 ** 1), out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
 
         # Segmentation decoder
-        self.seg_decoder = SegDecoder(int(dim * 2 ** 1), num_classes, num_refinement_blocks)
+        if self.my_seg_decoder =='simple': 
+            self.seg_decoder = SegDecoder(int(dim * 2 ** 1), num_classes, num_refinement_blocks)    
+        else: 
+            self.seg_decoder = ImprovedSegDecoder(in_channels=dim*8,num_classes=num_classes)
 
     def forward(self, inp_img):
         b, c, h_inp, w_inp = inp_img.shape
@@ -358,7 +364,10 @@ class Restormer_Seg(nn.Module):
         # Pass through decoder
         out_dec_level1 = self.rec_decoder(out_enc_level1, out_enc_level2, out_enc_level3, latent) #ou coloco outro decoder complexo desse
 
-        mask = self.seg_decoder(out_dec_level1)
+        if self.my_seg_decoder =='simple':
+            mask = self.seg_decoder(out_dec_level1)
+        else: 
+            mask = self.seg_decoder(latent)
 
         # Produce output
         out = self.output(out_dec_level1) #ou mudo essa camada final 

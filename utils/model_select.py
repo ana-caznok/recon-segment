@@ -80,7 +80,8 @@ def model_select(configs: Dict[str, Any]) -> nn.Module:
 
     elif 'restormer' in model_str: 
         if 'seg' in model_str: 
-            model = Restormer_Seg(inp_channels=start,out_channels=tot_channels)
+            dec = 'complex' if 'complex' in model_str else 'simple'
+            model = Restormer_Seg(inp_channels=start,out_channels=tot_channels,my_seg_decoder=dec)
         else:
             model = Restormer(inp_channels=start,out_channels=tot_channels)
 

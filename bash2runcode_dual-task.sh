@@ -30,6 +30,6 @@ export DATA_PATH="/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2/downsamp
 
 #python train_seg_rec_dualtask.py --config configs/msi2mask_wsam4.yaml
 
-python train_seg_rec_dualtask.py --config configs/restormer-seg_msi2mask2.yaml
+python train_seg_rec_dualtask.py --config configs/restormer-seg_msi2mask3.yaml
 
 

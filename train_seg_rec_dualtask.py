@@ -157,7 +157,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         output, out_prob = model(x)
         
         out_prob = torch.sigmoid(out_prob) #activating probabilities, will need to change if more then one class
-        mask = (out_prob > 0.5).float() #turning probabilities into binary mask 
+        mask = (out_prob <= 0.5).float() #turning probabilities into binary mask, weirdly inverts the mask
 
         if need_ifft:
             output = ifft_output_function(output, meta)
@@ -198,7 +198,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
             output,out_prob = model(x)
 
             out_prob = torch.sigmoid(out_prob) #will need to change if more then one class
-            mask = (out_prob > 0.5).float()
+            mask = (out_prob <= 0.5).float() #weird.. 
             
             if need_ifft: 
                 output = ifft_output_function(output,meta)
@@ -219,7 +219,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
 
             # Accumulate dice metric inputs
             my_dice = dice_metric(mask, meta['mask'].to(DEVICE))
-            if len(dice)>1: 
+            if len(my_dice)>1: 
                 dice = dice.mean()
             else: 
                 dice += my_dice
