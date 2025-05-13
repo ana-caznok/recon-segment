@@ -34,6 +34,8 @@ from monai.losses.dice import DiceLoss
 from monai.metrics.meandice import DiceMetric
 from monai.metrics import generalized_dice, GeneralizedDiceScore
 import torch.nn.functional as F
+from loss.seg_loss import *
+from torch.nn import L1Loss, MSELoss
 # Argument parser
 parser = argparse.ArgumentParser(description="Train 3D ViT model using YAML config.")
 parser.add_argument('--config', type=str, required=True, help="Path to the YAML configuration file")
@@ -108,7 +110,9 @@ val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)
 model, config = model_select(config)
 model = model.to(DEVICE) # Select model and loss function
 criterion = loss_select(config).to(DEVICE) #new
-criterion_seg = DiceLoss(include_background=include_background,to_onehot_y=False) #0 when good, 1 when bad
+#criterion_seg = DiceLoss(include_background=include_background,to_onehot_y=False) #0 when good, 1 when bad
+#criterion_seg = SegLoss()
+criterion_seg = L1Loss()
 
 start_epoch = config.get("start_epoch", 0)
 
@@ -141,13 +145,15 @@ if 'wandb_id' not in config.keys():
     run.log_artifact(artifact)
 
 # ---------------------------------------------- TRAIN LOOP -----------------------------------------------------------
-
+prec =0
+pseg = 1
 trn_history = []
 val_history = []
 
 for epoch in range(start_epoch,NUM_EPOCHS):
     model.train()
     train_loss = 0.0
+    seg_loss = 0.0
     for x, y, meta in tqdm(train_loader, desc=f"Epoch {epoch+1}/{NUM_EPOCHS} - Training"):
         
         x = x.to(DEVICE)
@@ -157,25 +163,29 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         output, out_prob = model(x)
         
         out_prob = torch.sigmoid(out_prob) #activating probabilities, will need to change if more then one class
-        mask = (out_prob <= 0.5).float() #turning probabilities into binary mask, weirdly inverts the mask
+        mask = (out_prob >= 0.5).float() #turning probabilities into binary mask
 
         if need_ifft:
             output = ifft_output_function(output, meta)
 
         loss_rec = criterion(output, y)
-        loss_seg = criterion_seg(mask, meta['mask'].to(DEVICE))
-        loss = loss_rec + loss_seg
+        #loss_seg = criterion_seg(mask, meta['mask'].to(DEVICE))
+        loss_seg = criterion_seg(out_prob, meta['mask'].to(DEVICE))
+        loss = prec*loss_rec + pseg*loss_seg
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item()
+        seg_loss += loss_seg.item()
 
 
     avg_train_loss = train_loss / len(train_loader)
+    avg_seg_loss = seg_loss/len(train_loader)
     trn_history.append(avg_train_loss)
 
     if config['wandb']:
         wandb.log({f"Train Avg Loss {config['loss']}": avg_train_loss})
+        wandb.log({"Seg Loss": avg_seg_loss})
         wandb.log({"epoch": epoch})
         
 
@@ -197,15 +207,15 @@ for epoch in range(start_epoch,NUM_EPOCHS):
 
             output,out_prob = model(x)
 
-            out_prob = torch.sigmoid(out_prob) #will need to change if more then one class
-            mask = (out_prob <= 0.5).float() #weird.. 
+            #out_prob = torch.sigmoid(out_prob) #will need to change if more then one class
+            mask = (out_prob >= 0.5).float()  
             
             if need_ifft: 
                 output = ifft_output_function(output,meta)
                 
             loss_rec = criterion(output, y)
-            loss_seg = criterion_seg(mask, meta['mask'].to(DEVICE))
-            loss = loss_rec + loss_seg
+            loss_seg = criterion_seg(out_prob, meta['mask'].to(DEVICE))
+            loss = prec*loss_rec + pseg*loss_seg
             val_loss += loss.item()
             i += 1
             if transform2metrics: 
@@ -229,7 +239,7 @@ for epoch in range(start_epoch,NUM_EPOCHS):
 
     avg_ssim = ssim/len(val_loader)
     avg_sam = sam/len(val_loader)
-    avg_dice = dice/len(val_loader)
+    avg_dice = (dice/len(val_loader)).detach().cpu().numpy()
     #dice_metric.reset()
  
     if config['wandb']:
@@ -238,8 +248,8 @@ for epoch in range(start_epoch,NUM_EPOCHS):
         wandb.log({"SSIM": avg_ssim})
         wandb.log({"SAM": avg_sam})
         wandb.log({"DICE": avg_dice})
-
-    print(f"Epoch {epoch+1}/{NUM_EPOCHS}: Train Loss = {avg_train_loss:.4f}, Val Loss = {avg_val_loss:.4f}")
+    print(avg_dice)
+    print(f"Epoch {epoch+1}/{NUM_EPOCHS}: Train Loss= {avg_train_loss:.4f}, Val Loss= {avg_val_loss:.4f}, Seg_Loss= {avg_seg_loss}")
 
     if avg_val_loss == np.array(val_history).min(): 
 
