@@ -30,6 +30,8 @@ def loss_select(configs: Dict[str, Any]) -> object:
         return MRAESSIMSAMLoss()
     elif index == "MRAESSIMSAMLoss_W":
         return MRAESSIMSAMLoss(weighted_sam=True)
+    elif index == "MRAESSIMSAMLoss_I":
+        return MRAESSIMSAMLoss(intensity_sam=True)
     elif index == "SSIMSAMLoss":
         return MRAESSIMSAMLoss(enable_mrae=False)
     elif index == "MRAESAMLoss":

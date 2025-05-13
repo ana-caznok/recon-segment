@@ -2,20 +2,27 @@ import torch
 from torch import nn
 from loss.useful_losses import Loss_MRAE, Loss_PSNR, Loss_RMSE
 from torchmetrics.image import SpectralAngleMapper, StructuralSimilarityIndexMeasure
+from metrics.sam import Intensity_SAMScore
 
 
 class MRAESSIMSAMLoss(nn.Module):
-    def __init__(self, enable_mrae=True, enable_sam=True, enable_ssim=True, weighted_sam = False):
+    def __init__(self, enable_mrae=True, enable_sam=True, enable_ssim=True, weighted_sam = False, intensity_sam = False):
         super().__init__()
         self.enable_mrae = enable_mrae
         self.enable_sam = enable_sam
         self.enable_ssim = enable_ssim
         self.weighted_sam = weighted_sam
+        self.intensity_sam = intensity_sam
         
         assert int(enable_mrae) + int(enable_sam) + int(enable_ssim) > 0, "Please enable some loss"
         
         self.mrae = Loss_MRAE()
-        self.sam = SpectralAngleMapper(compute_with_cache=False)
+
+        if self.intensity_sam: 
+            self.sam = Intensity_SAMScore()
+        else: 
+            self.sam = SpectralAngleMapper(compute_with_cache=False)
+            
         self.ssim = StructuralSimilarityIndexMeasure(compute_with_cache=False)
 
     def forward(self, pred, target):

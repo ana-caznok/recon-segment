@@ -28,6 +28,24 @@ def sam_fn(pred, target):
     map[torch.isnan(map)] = 0
     return score, map
 
+def sam_intensity(pred, target):
+    '''
+    pred, target: [c, w, h]
+    '''
+    pred, target = pred.squeeze(), target.squeeze()
+    up = torch.sum((target*pred), dim = 0)   # [w, h]
+    down1 = torch.sum((target**2), dim = 0).sqrt()
+    down2 = torch.sum((pred**2), dim = 0).sqrt()
+
+    map = torch.arccos(up / (down1 * down2))
+  
+    med = torch.mean(target,dim=0)
+  
+    map = map*med #new intensity weighted 
+    score = torch.mean(map[~torch.isnan(map)])
+    map[torch.isnan(map)] = 0
+    return score, map
+
 
 class SAMScore(nn.Module):
     '''
@@ -36,14 +54,52 @@ class SAMScore(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(self, pred: torch.Tensor, target: torch.Tensor, return_maps = False) -> torch.Tensor:
         assert len(target.shape) == 4 and len(pred.shape) == 4, "SAMScore accepts a 4D batch as an input"
 
         sam_scores: List[torch.Tensor] = []
+        sam_maps: List[torch.Tensor] = []
+
         for p, t in zip(pred, target):
             sam_scores.append(sam_fn(p, t)[0])
+
+            if return_maps: 
+                sam_maps.append(sam_fn(p, t)[1])
+
+        if return_maps: 
+            return torch.stack(sam_scores).mean() , torch.stack(sam_maps)
         
-        return torch.stack(sam_scores).mean()
+        else: 
+            return torch.stack(sam_scores).mean()
     
     def reset(self):
         pass
+
+class Intensity_SAMScore(nn.Module):
+    '''
+    Returns the score value from Challenge owners sam_fn
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor, return_maps = False) -> torch.Tensor:
+        assert len(target.shape) == 4 and len(pred.shape) == 4, "SAMScore accepts a 4D batch as an input"
+
+        sam_scores: List[torch.Tensor] = []
+        sam_maps: List[torch.Tensor] = []
+
+        for p, t in zip(pred, target):
+            sam_scores.append(sam_intensity(p, t)[0])
+
+            if return_maps: 
+                sam_maps.append(sam_intensity(p, t)[1])
+
+        if return_maps: 
+            return torch.stack(sam_scores).mean() , torch.stack(sam_maps)
+        
+        else: 
+            return torch.stack(sam_scores).mean()
+    
+    def reset(self):
+        pass
+
