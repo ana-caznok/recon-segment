@@ -34,7 +34,7 @@ def interpolate_channels(
     assert image.ndim == 3, "Input must have shape (C, H, W)"
     C, H, W = image.shape
     assert C < 31, f"Expected fewer than 31 channels, got {C}"
-    #print(image.shape)
+    print(image.shape)
     # Reshape to 5D tensor: (N, C, D, H, W) → treat channels as depth
     # So we move channel to "depth" axis: (C, H, W) → (1, 1, C, H, W)
     image = image.unsqueeze(0).unsqueeze(0)  # now (1, 1, C, H, W)
