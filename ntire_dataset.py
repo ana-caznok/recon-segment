@@ -6,7 +6,6 @@ import torch
 from torch.utils.data import Dataset
 from typing import Dict, Tuple, Any
 
-
 class NTIRE2022LikeDataset(Dataset):
     """
     Dataset for NTIRE2022-style HSI + RGB image pairs.
@@ -32,6 +31,29 @@ class NTIRE2022LikeDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.sample_ids)
+    
+    def mirror_pad_to_square(self, arr) -> np.ndarray:
+    
+        assert arr.ndim == 3, "Input must have shape (C, H, W)"
+        C, H, W = arr.shape
+
+        if H == W:
+            return arr  # Already square, no padding needed
+
+        if H < W:
+            # Need to pad height (top and bottom)
+            pad_total = W - H
+            pad_top = pad_total // 2
+            pad_bottom = pad_total - pad_top
+            padded = np.pad(arr, ((0, 0), (pad_top, pad_bottom), (0, 0)), mode='reflect')
+        else:
+            # Need to pad width (left and right)
+            pad_total = H - W
+            pad_left = pad_total // 2
+            pad_right = pad_total - pad_left
+            padded = np.pad(arr, ((0, 0), (0, 0), (pad_left, pad_right)), mode='reflect')
+
+        return padded
 
     def load_imgs(self, sample_id: str) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -87,6 +109,8 @@ class NTIRE2022LikeDataset(Dataset):
             raise ValueError(f"Unsupported RGB format: {ext_rgb}")
         rgb = img.astype(np.float32)
 
+        rgb = self.mirror_pad_to_square(rgb)
+        hyper = self.mirror_pad_to_square(hyper)
         return hyper, rgb
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
@@ -113,8 +137,10 @@ class NTIRE2022LikeDataset(Dataset):
         if self.transform is not None:
             rgb, hyper, metadata = self.transform(rgb, hyper, metadata)
 
-        # Convert to torch tensors
-        rgb_tensor = torch.from_numpy(rgb).float()
-        hyper_tensor = torch.from_numpy(hyper).float()
+        if isinstance(rgb, np.ndarray):
+            # Convert to torch tensors
+            rgb = torch.from_numpy(rgb).float()
+            hyper = torch.from_numpy(hyper).float()
 
-        return rgb_tensor, hyper_tensor, metadata
+
+        return rgb, hyper, metadata

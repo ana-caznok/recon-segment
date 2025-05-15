@@ -4,6 +4,51 @@ from utils.preprocessing_utils import random_crop
 from typing import Union, Tuple, Dict, Any
 import scipy
 import scipy.io
+import torch.nn.functional as F
+import torch
+import torch.nn.functional as F
+import numpy as np
+from typing import Union
+
+
+def interpolate_channels(
+    image: Union[np.ndarray, torch.Tensor],
+    return_torch: bool = True, 
+    final_channels = 31
+    ) -> Union[np.ndarray, torch.Tensor]:
+    """
+    Interpolates a (C, H, W) image with C < 31 to (31, H, W) using trilinear interpolation
+    along the spectral (channel) axis (treated as depth).
+
+    Args:
+        image: Input tensor or ndarray of shape (C, H, W), with C < 31
+        return_torch: Whether to return a torch.Tensor or a NumPy array
+
+    Returns:
+        Interpolated output of shape (31, H, W)
+    """
+    # Convert to tensor if needed
+    if isinstance(image, np.ndarray):
+        image = torch.from_numpy(image).float()
+
+    assert image.ndim == 3, "Input must have shape (C, H, W)"
+    C, H, W = image.shape
+    assert C < 31, f"Expected fewer than 31 channels, got {C}"
+    #print(image.shape)
+    # Reshape to 5D tensor: (N, C, D, H, W) → treat channels as depth
+    # So we move channel to "depth" axis: (C, H, W) → (1, 1, C, H, W)
+    image = image.unsqueeze(0).unsqueeze(0)  # now (1, 1, C, H, W)
+
+    # Interpolate depth dimension (C → final_channels)
+    interp = F.interpolate(image, size=(final_channels, H, W), mode='trilinear', align_corners=True)
+
+    # Remove batch and channel dimensions, result is (1, 1, final_channels, H, W)
+    # Rearrange back to (final_channels, H, W)
+    interp = interp.squeeze(0).squeeze(0)  # final shape: (final_channels, H, W)
+    #print(interp.shape)
+
+    return interp if return_torch else interp.cpu().numpy()
+
 
 def rgb2hyp(
     rgb: Union[np.ndarray, torch.Tensor], gain_function: Union[np.ndarray, torch.Tensor],
@@ -52,52 +97,62 @@ def rgb2hyp(
 
         return pseudo_hyp
 
-
 class RGB2Pseudo_Hyp:
     """
     Callable class for converting RGB to pseudo hyperspectral images.
+
+    Modes:
+    - If interpolate_to_31 = True: use interpolation to generate 31 channels.
+    - Else: use standard rgb2hyp + gain matrix.
     """
 
-    def __init__(self, base_path: str,
-                       camera: str,
-                       norm: bool = False,
-                       return_torch: bool = True):
-        
+    def __init__(self,
+                 base_path: str,
+                 camera: str,
+                 norm: bool = False,
+                 return_torch: bool = True,
+                 ):
         self.base_path = base_path
         self.camera = camera
         self.norm = norm
         self.return_torch = return_torch
+
+        if 'interp' in self.camera:
+            self.interpolate = True
+            self.final_channels = int(self.camera.split('terp')[1])
+        else: 
+            self.interpolate = False
+            self.final_channels = 31
 
     def __call__(
         self,
         x: np.ndarray,
         y: np.ndarray,
         m: Dict[str, Any]
-         ) -> Tuple[Union[np.ndarray, torch.Tensor], np.ndarray, Dict[str, Any]]:
+    ) -> Tuple[Union[np.ndarray, torch.Tensor], np.ndarray, Dict[str, Any]]:
         """
-        Transforms the input image using RGB -> pseudo hyperspectral conversion.
-
-        Parameters:
-        - x: (3, H, W) RGB image
-        - y: target data (unchanged)
-        - m: metadata (unchanged)
+        Applies RGB or MSI to pseudo-HSI transformation via either:
+        - Interpolation to 31 channels
+        - RGB gain matrix projection
 
         Returns:
-        - Transformed x, y, m
+            Tuple (x_transformed, y, m)
         """
-        # Select gain file based on camera type
-        gain_file = 'example_D40_camera_w_gain.mat' if self.camera == 'D40' else 'cie_1964_w_gain.mat'
-        gain_path = self.base_path + 'transforms/' + gain_file
+        if self.interpolate:
+            # Use direct RGB interpolation
+            x = interpolate_channels(x, return_torch=self.return_torch, final_channels=self.final_channels)
+        else:
+            # Use gain matrix projection
+            gain_file = 'example_D40_camera_w_gain.mat' if self.camera == 'D40' else 'cie_1964_w_gain.mat'
+            gain_path = self.base_path + 'transforms/' + gain_file
 
-        # Load gain matrix from .mat file
-        gain_function = scipy.io.loadmat(gain_path)['filters']
+            # Load gain matrix from .mat file
+            gain_function = scipy.io.loadmat(gain_path)['filters']
 
-        # Apply the RGB -> hyperspectral conversion
-        x = rgb2hyp(x, gain_function, norm=self.norm, return_torch=self.return_torch)
+            x = rgb2hyp(x, gain_function, norm=self.norm, return_torch=self.return_torch)
 
         return x, y, m
 
     def __str__(self) -> str:
-        return f"RGB2Pseudo_Hyp(base_path='{self.base_path}', camera='{self.camera}', norm={self.norm}, return_torch={self.return_torch})"
-
-    
+        return (f"RGB2Pseudo_Hyp(base_path='{self.base_path}', camera='{self.camera}', "
+                f"norm={self.norm}, return_torch={self.return_torch}, interpolate={self.interpolate}, final_channels={self.final_channels})")

@@ -15,13 +15,17 @@ def rgb2hyp_transf(rgb2hyp_file='D40', normalize=False):
     return RGB2Pseudo_Hyp(get_base_path(), rgb2hyp_file, normalize) # PROVAVELMENTE NORMALIZE PRECISE SER SEMPRE TRUE
 
 
-def fourier_transform(rgb2hyp_file='D40', pseudohyp_norm = False, downsample_factor=None, fft_norm='abs',
+def fourier_transform(rgb2hyp_file='D40', pseudohyp_norm = False,downsample_factor=None, resize=False, fft_norm='abs',
                       double=False, cube=True, shift=False, 
                       device='cuda', invert=False, stack_type='alternate'):
     """Compose a transform including optional downsampling, RGB2Hyp, and spectral FFT."""
     transforms = []
     if downsample_factor:
         transforms.append(Downsample(factor=downsample_factor))  # Downsample if specified
+
+    if resize: 
+        transforms.append(ResizeTo256())
+    
     transforms.append(rgb2hyp_transf(rgb2hyp_file, pseudohyp_norm))  # Convert RGB to hyperspectral
     transforms.append(FourierSpectralTransform(
         norm=fft_norm,
@@ -83,6 +87,8 @@ def transform_factory(index: str):
             rgb2hyp_file = 'D40'
         elif 'normal' in index:
             rgb2hyp_file = 'cie'
+        elif 'interp' in index: 
+            rgb2hyp_file = 'interp'
         else:
             rgb2hyp_file = 'cie'
 
@@ -96,6 +102,7 @@ def transform_factory(index: str):
     # FFT-based transforms
     elif 'fft' in string_split:
         pseudohyp_norm = False
+        resize=False
 
         # Determine downsample factor from prefix (e.g. 'downs4')
         if 'downs' in string_split[0]:
@@ -103,11 +110,18 @@ def transform_factory(index: str):
         else:
             factor = None
 
+        if 'resize256' in index: 
+            resize=True
         # Choose RGB2Hyp source
         if 'D40' in index:
             rgb2hyp_file = 'D40'
         elif 'normal' in index:
             rgb2hyp_file = 'cie'
+        elif 'interp' in index: 
+            #_interp15_
+            interp_factor = index.split('interp')[1].split('_')[0]
+            rgb2hyp_file = 'interp' + interp_factor
+            
         else:
             rgb2hyp_file = 'cie'
 
@@ -154,6 +168,7 @@ def transform_factory(index: str):
             rgb2hyp_file,
             pseudohyp_norm,
             downsample_factor=factor,
+            resize=resize,
             fft_norm=fft_norm,
             double=double,
             cube=transform_cube,
