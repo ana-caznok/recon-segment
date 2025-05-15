@@ -17,6 +17,7 @@ import shutil
 
 # Custom imports from project structure
 from fixed_dataset import FixedDataset
+from ntire_dataset import NTIRE2022LikeDataset
 from seg_recon_vit3d import SegRecon_ViT_3D
 from transforms import * 
 from transforms.factory import transform_factory
@@ -57,6 +58,7 @@ fixed_checkpoint_name = config["fixed_checkpoint_name"]
 SAVE_STEPS = int(config['save_steps'])
 need_ifft = bool(config['ifft'])
 transform2metrics = bool(config['transform2metrics']) if 'transform2metrics' in config else False
+ntire_dataset = bool(config['ntire_dataset']) if 'ntire_dataset' in config else False
 
 
 try:
@@ -79,20 +81,29 @@ if transform2metrics:
 
 
 
-# ------------------ DATASET + LOADER -----------------------------------------
-train_dataset = FixedDataset(
-    mode="train",
-    base_path=BASE_PATH,
-    transform=transform_factory(TRANSFORM),  # You can define transforms here
-    preprocessing=PREPROCESSING
-)
+# ------------------------------ DATASET + LOADER -----------------------------------------
 
-val_dataset = FixedDataset(
-    mode="val",
-    base_path=BASE_PATH,
-    transform=transform_factory(TRANSFORM),
-    preprocessing=PREPROCESSING
-)
+if ntire_dataset: 
+    train_dataset = NTIRE2022LikeDataset(BASE_PATH, 
+                                         split='train', 
+                                         transform=transform_factory(TRANSFORM))
+    val_dataset = NTIRE2022LikeDataset(BASE_PATH, 
+                                         split='valid', 
+                                         transform=transform_factory(TRANSFORM))
+else: 
+    train_dataset = FixedDataset(
+        mode="train",
+        base_path=BASE_PATH,
+        transform=transform_factory(TRANSFORM),  # You can define transforms here
+        preprocessing=PREPROCESSING
+    )
+
+    val_dataset = FixedDataset(
+        mode="val",
+        base_path=BASE_PATH,
+        transform=transform_factory(TRANSFORM),
+        preprocessing=PREPROCESSING
+    )
 
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=VAL_BATCH_SIZE, shuffle=False)

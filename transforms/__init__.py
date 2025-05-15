@@ -7,4 +7,5 @@ from .histogram_match import HistMatch, HistMatch_h5
 from .pseudo_hyper import RGB2Pseudo_Hyp
 from .spectrogram_4d import Spectrogram4D
 from .fft_transform import FourierSpectralTransform
+from .resize_to_256 import ResizeTo256
 from .factory import transform_factory

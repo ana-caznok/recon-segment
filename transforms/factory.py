@@ -1,6 +1,6 @@
 import os
 from transforms import RandomCrop, Compose, Downsample, RandomCropBB, HistMatch_h5, RGB2Pseudo_Hyp, Spectrogram4D, FourierSpectralTransform, DownsampleInput, RainbowTransformsnnUNet, RandomCropCenter, HistMatch
-
+from transforms import ResizeTo256
 def get_base_path():
     """Get the base path for loading data."""
     try: 
@@ -66,6 +66,9 @@ def transform_factory(index: str):
     # Bounding-box-based random crop
     elif index == 'random_crop_bb_downs_p085': 
         return RandomCropBB(patch_size=64, prob_in_bb=0.85)
+    
+    elif index=='resize256': 
+        return ResizeTo256()
     
 
     elif 'rgb2hyp' in string_split:
