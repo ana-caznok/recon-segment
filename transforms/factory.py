@@ -75,6 +75,9 @@ def transform_factory(index: str):
     elif index=='resize256': 
         return ResizeTo256()
     
+    elif index=='crop-channels': 
+        return ChannelCrop(31)
+    
 
     elif 'rgb2hyp' in string_split:
         # Determine downsample factor from prefix (e.g. 'downs4')

@@ -11,20 +11,20 @@ save_steps: 20
 wandb: True
 
 train:
-  batch_size: 5  
+  batch_size: 1  
   lr: 0.0001  # 1e-4 faster initial lr 
   epochs: 50 
-  transform_index: "fft_crop-channels_double_interp16_none_gpu_shift" # nnunet transform simply doesnt work 
+  transform_index: "crop-channels" # nnunet transform simply doesnt work 
 
 valid:
   batch_size: 1
-  transform_index: "fft_crop-channels_double_interp16_none_gpu_shift"
+  transform_index: "crop-channels"
 
 nworkers: 8
 
 task: 'recon'
 loss: "MRAESSIMSAMLoss"  
-model: 'monai-unet_32to62' 
+model: 'restormer_3to31' 
 base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
 preprocessing: 'downsampled'
 opt: "AdamW"  # adamW with 1e-5 weight decay
