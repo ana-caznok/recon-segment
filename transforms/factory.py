@@ -1,7 +1,7 @@
 import os
 from transforms import RandomCrop, Compose, Downsample, RandomCropBB, HistMatch_h5, RGB2Pseudo_Hyp, Spectrogram4D, FourierSpectralTransform, DownsampleInput, RainbowTransformsnnUNet, RandomCropCenter, HistMatch
 from transforms import ResizeTo256
-from crop_channels import ChannelCrop
+from transforms import ChannelCrop
 def get_base_path():
     """Get the base path for loading data."""
     try: 
@@ -181,7 +181,7 @@ def transform_factory(index: str):
 
         if 'crop-channels' in index: 
             fft_transform = Compose([ChannelCrop(31), fft_transform])
-            
+
         return fft_transform
 
        
