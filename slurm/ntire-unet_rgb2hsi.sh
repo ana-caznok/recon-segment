@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=20
 #SBATCH --partition=gpu-v100
 #SBATCH --gres=gpu:1
-#SBATCH --mem=16GB
+#SBATCH --mem=18GB
 #SBATCH --time=0-24:00:00
 #SBATCH --output=unet-ntire_rgb2hsi.out
 # ====================================
