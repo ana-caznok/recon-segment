@@ -1,6 +1,7 @@
 import os
 from transforms import RandomCrop, Compose, Downsample, RandomCropBB, HistMatch_h5, RGB2Pseudo_Hyp, Spectrogram4D, FourierSpectralTransform, DownsampleInput, RainbowTransformsnnUNet, RandomCropCenter, HistMatch
 from transforms import ResizeTo256
+from crop_channels import ChannelCrop
 def get_base_path():
     """Get the base path for loading data."""
     try: 
@@ -163,20 +164,27 @@ def transform_factory(index: str):
         else:
             fft_norm = 'abs'
 
-        # Compose and return the full FFT transform
-        return fourier_transform(
-            rgb2hyp_file,
-            pseudohyp_norm,
-            downsample_factor=factor,
-            resize=resize,
-            fft_norm=fft_norm,
-            double=double,
-            cube=transform_cube,
-            shift=shift_frequencies,
-            device=device,
-            invert=invert,
-            stack_type=stack_type
-        )
+        # Compose the full FFT transform
+        fft_transform = fourier_transform(
+                        rgb2hyp_file,
+                        pseudohyp_norm,
+                        downsample_factor=factor,
+                        resize=resize,
+                        fft_norm=fft_norm,
+                        double=double,
+                        cube=transform_cube,
+                        shift=shift_frequencies,
+                        device=device,
+                        invert=invert,
+                        stack_type=stack_type
+                        )
+
+        if 'crop-channels' in index: 
+            fft_transform = Compose([ChannelCrop(31), fft_transform])
+            
+        return fft_transform
+
+       
 
     # STFT (spectrogram-based) transforms
     elif index == 'stft_D40_x_gpu':
