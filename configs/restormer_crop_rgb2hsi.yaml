@@ -29,7 +29,7 @@ base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" 
 preprocessing: 'downsampled'
 opt: "AdamW"  # adamW with 1e-5 weight decay
 scheduling: 0.998  # exponential learning rate decay
-ifft: True
+ifft: False
 
 # Minimize sam instead of loss
 torchinfo: True
