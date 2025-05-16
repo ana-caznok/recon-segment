@@ -11,7 +11,7 @@ save_steps: 20
 wandb: True
 
 train:
-  batch_size: 4  
+  batch_size: 5  
   lr: 0.0001  # 1e-4 faster initial lr 
   epochs: 50 
   transform_index: "downsample_2" # nnunet transform simply doesnt work 
@@ -24,7 +24,7 @@ nworkers: 8
 
 task: 'recon'
 loss: "MRAESSIMSAMLoss"  
-model: 'restormer_3to31' 
+model: 'monai-unet_3to31' 
 base_path: "DATA_PATH" #"/media/ana-caznok/SSD-08/icasp_4090/icasp/data/Link_2" # variavel de ambiente
 preprocessing: 'downsampled'
 opt: "AdamW"  # adamW with 1e-5 weight decay
