@@ -4,17 +4,18 @@ from utils.preprocessing_utils import random_crop
 from typing import Union, Tuple, Dict, Any
 
 
-def crop_channels(cube, channels, m=None):
+def crop_channels(img, cube, channels, m=None):
     '''
         It assumes img and cube have the channel in first dim
             cube: [c2, x,y]
 
     '''
     assert cube.shape[0] >= channels
-   
+    assert img.shape[0] <= 3
+    img = img[0:-1,:,:] #transformando img em rgb, para ser compativel com a reconstrucao com menos canais, apenas rgb
     cube = cube[0:channels, :, :]
    
-    return cube
+    return img, cube
 
 
 class ChannelCrop():
@@ -31,7 +32,7 @@ class ChannelCrop():
                  x: np.ndarray, 
                  y: np.ndarray,
                  m: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-        y = crop_channels( y, self.channels)
+        x, y = crop_channels( x, y, self.channels)
         return x, y, m
 
     def __str__(self) -> str:
