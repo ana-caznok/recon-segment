@@ -22,4 +22,4 @@ wandb login
 cd /home/ana.caznoksilveira/recon-segment
 
 
-python train_seg_rec.py --config configs/ntire-unet_rgb2hsi_1000.yaml
+python train_seg_rec.py --config configs/ntire-unet_rgb2fft2ifft2hsi_1000.yaml
